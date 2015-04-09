@@ -1,5 +1,6 @@
 # message_filter 
 
+A size based or time based message filter. Takes any generic type as key and will dop keys after a time period or size of containrt is reached. The filter has Add/Has key methods. Delete will be added at a later stage. This is a handy container for network based systems to filter previously seen messages.
 
 Travis build and test status
 
@@ -18,5 +19,11 @@ Code Coverage
 [Documentation](http://dirvine.github.io/message_filter/)
 
 #Todo
-
+- [ ] Implement add_key
+- [ ] Test add_key (time and size based tests)
+- [ ] Implement has_key  
+- [ ] Test has_key (time and size based tests)
+- [ ] API version 0.8.0
+- [ ] Implement delete_key  
+- [ ] Test delete_key (time and size based tests)
 - [ ] API version 0.1.0
