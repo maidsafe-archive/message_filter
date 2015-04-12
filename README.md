@@ -19,6 +19,6 @@ Code Coverage
 [Documentation](http://dirvine.github.io/message_filter/)
 
 #Todo
-- [ ] Implement add_key )bool return, true added, false == already exists)
+- [ ] Implement add_key ) bool return, true added, false == already exists)
 - [ ] Test add_key (time and size based tests)
 - [ ] API version 0.1.0
