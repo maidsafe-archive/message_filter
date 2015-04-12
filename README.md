@@ -23,7 +23,4 @@ Code Coverage
 - [ ] Test add_key (time and size based tests)
 - [ ] Implement has_key  
 - [ ] Test has_key (time and size based tests)
-- [ ] API version 0.8.0
-- [ ] Implement delete_key  
-- [ ] Test delete_key (time and size based tests)
 - [ ] API version 0.1.0
