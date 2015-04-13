@@ -22,6 +22,7 @@
        html_favicon_url = "http://maidsafe.net/img/favicon.ico",
               html_root_url = "http://dirvine.github.io/dirvine/message_filter/")]
 #![feature(std_misc)]
+#![feature(old_io)]
 
 //! #message_filter limited via size or time  
 //! 
@@ -93,19 +94,24 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
         if self.set.insert(value.clone()) {
             self.list.push_back((value, chrono::Local::now()));
         }
-        let trimmed = std::cmp::max(0, self.set.len() - self.capacity);
+
+        let mut trimmed = 0;
+        if self.set.len() > self.capacity {
+            trimmed = self.set.len() - self.capacity;
+        }
         for _ in 0..trimmed {
             self.set.remove(&self.list.pop_front().unwrap().0);
         }
+
         let mut expiring = true;
         while expiring {
-            if self.list.front().unwrap().1 + self.time_to_live < chrono::Local::now() {
+            if self.time_to_live != chrono::duration::MAX &&
+               self.list.front().unwrap().1 + self.time_to_live < chrono::Local::now() {
                 self.set.remove(&self.list.pop_front().unwrap().0);
             } else {
                 expiring = false;
             }
         }
-        
     }
 /// Check for existance of a key
     pub fn check(&self, value: &V) -> bool {
@@ -116,4 +122,127 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
         self.set.len()
     }
 
+}
+
+
+
+#[cfg(test)]
+mod test {
+#![allow(deprecated)]
+    extern crate chrono;
+    extern crate rand;
+
+    use super::MessageFilter;
+    use std::old_io;
+
+    fn generate_random_vec<T>(len: usize) -> Vec<T> where T: rand::Rand {
+        let mut vec = Vec::<T>::with_capacity(len);
+        for _ in 0..len {
+            vec.push(rand::random::<T>());
+        }
+        vec
+    }
+
+    #[test]
+    fn size_only() {
+        let size = 10usize;
+        let mut msg_filter = MessageFilter::<usize>::with_capacity(size);
+
+        for i in 0..10 {
+            println!("i : {} ", i);
+            assert_eq!(msg_filter.len(), i);
+            msg_filter.add(i);
+            assert_eq!(msg_filter.len(), i + 1);
+        }
+
+        for i in 10..1000 {
+            msg_filter.add(i);
+            assert_eq!(msg_filter.len(), size);
+        }
+
+        for _ in (0..1000).rev() {
+            assert!(msg_filter.check(&(1000 - 1)));
+        }
+    }
+
+    #[test]
+    fn time_only() {
+        let time_to_live = chrono::duration::Duration::milliseconds(100);
+        let mut msg_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);
+
+        for i in 0..10 {
+            assert_eq!(msg_filter.len(), i);
+            msg_filter.add(i);
+            assert_eq!(msg_filter.len(), i + 1);
+        }
+
+        old_io::timer::sleep(chrono::duration::Duration::milliseconds(100));
+        msg_filter.add(11);
+
+        assert_eq!(msg_filter.len(), 1);
+
+        for i in 0..10 {
+            assert_eq!(msg_filter.len(), i + 1);
+            msg_filter.add(i);
+            assert_eq!(msg_filter.len(), i + 2);
+        }
+    }
+
+    #[test]
+    fn time_and_size() {
+        let size = 10usize;
+        let time_to_live = chrono::duration::Duration::milliseconds(100);
+        let mut msg_filter = MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);
+
+        for i in 0..1000 {
+            if i < size {
+                assert_eq!(msg_filter.len(), i);
+            }
+
+            msg_filter.add(i);
+
+            if i < size {
+                assert_eq!(msg_filter.len(), i + 1);
+            } else {
+                assert_eq!(msg_filter.len(), size);
+            }
+        }
+
+        old_io::timer::sleep(chrono::duration::Duration::milliseconds(100));
+        msg_filter.add(1);
+
+        assert_eq!(msg_filter.len(), 1);
+    }
+
+    #[test]
+    fn time_size_struct_value() {
+        let size = 100usize;
+        let time_to_live = chrono::duration::Duration::milliseconds(100);
+
+        #[derive(PartialEq, PartialOrd, Ord, Clone, Eq, Hash)]
+        struct Temp {
+            id: Vec<u8>,
+        }
+
+        let mut msg_filter = MessageFilter::<Temp>::with_expiry_duration_and_capacity(time_to_live, size);
+
+        for i in 0..1000 {
+            if i < size {
+                assert_eq!(msg_filter.len(), i);
+            }
+
+            msg_filter.add(Temp { id: generate_random_vec::<u8>(64), });
+
+            if i < size {
+                assert_eq!(msg_filter.len(), i + 1);
+            } else {
+                assert_eq!(msg_filter.len(), size);
+            }
+        }
+
+        old_io::timer::sleep(chrono::duration::Duration::milliseconds(100));
+        msg_filter.add(Temp { id: generate_random_vec::<u8>(64), });
+
+        assert_eq!(msg_filter.len(), 1);
+    }
 }
