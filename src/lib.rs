@@ -21,8 +21,7 @@
 #![doc(html_logo_url = "http://maidsafe.net/img/Resources/branding/maidsafe_logo.fab2.png",
        html_favicon_url = "http://maidsafe.net/img/favicon.ico",
               html_root_url = "http://dirvine.github.io/dirvine/message_filter/")]
-#![feature(std_misc)]
-#![feature(old_io)]
+
 
 //! #message_filter limited via size or time  
 //! 
@@ -36,18 +35,18 @@
 //!
 //!##Or as time based MessageFilter
 //! 
-//! `let time_to_live = chrono::duration::Duration::milliseconds(100);`
+//! `let time_to_live = time::Duration::milliseconds(100);`
 //!
 //! `let mut message_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);`
 //! 
 //!##Or as time or size limited cache
 //!
 //! ` let size = 10usize;
-//!     let time_to_live = chrono::duration::Duration::milliseconds(100);
+//!     let time_to_live = time::Duration::milliseconds(100);
 //!     let mut message_filter = MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);`
 
 
-extern crate chrono;
+extern crate time;
 
 use std::usize;
 use std::collections::{HashSet, VecDeque};
@@ -57,9 +56,9 @@ use std::hash::Hash;
 /// Get(value) is not required as only value is stored
 pub struct MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
     set: HashSet<V>,
-    list: VecDeque<(V, chrono::DateTime<chrono::Local>)>,
+    list: VecDeque<(V, time::SteadyTime)>,
     capacity: usize,
-    time_to_live: chrono::duration::Duration,
+    time_to_live: time::Duration,
 }
 /// constructor for size (capacity) based MessageFilter
 impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
@@ -68,11 +67,11 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
             set: HashSet::new(),
             list: VecDeque::new(),
             capacity: capacity,
-            time_to_live: chrono::duration::MAX,
+            time_to_live: time::Duration::max_value(),
         }
     }
 /// constructor for time based HashMap
-    pub fn with_expiry_duration(time_to_live: chrono::duration::Duration) -> MessageFilter<V> {
+    pub fn with_expiry_duration(time_to_live: time::Duration) -> MessageFilter<V> {
         MessageFilter {
             set: HashSet::new(),
             list: VecDeque::new(),
@@ -81,7 +80,7 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
         }
     }
 /// constructor for dual feature capacity or time based MessageFilter
-    pub fn with_expiry_duration_and_capacity(time_to_live: chrono::duration::Duration, capacity: usize) -> MessageFilter<V> {
+    pub fn with_expiry_duration_and_capacity(time_to_live: time::Duration, capacity: usize) -> MessageFilter<V> {
         MessageFilter {
             set: HashSet::new(),
             list: VecDeque::new(),
@@ -92,7 +91,7 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
 /// Add a value to MessageFilter
     pub fn add(&mut self, value: V) {
         if self.set.insert(value.clone()) {
-            self.list.push_back((value, chrono::Local::now()));
+            self.list.push_back((value, time::SteadyTime::now()));
         }
 
         let mut trimmed = 0;
@@ -105,8 +104,8 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
 
         let mut expiring = true;
         while expiring {
-            if self.time_to_live != chrono::duration::MAX &&
-               self.list.front().unwrap().1 + self.time_to_live < chrono::Local::now() {
+            if self.time_to_live != time::Duration::max_value() &&
+               self.list.front().unwrap().1 + self.time_to_live < time::SteadyTime::now() {
                 self.set.remove(&self.list.pop_front().unwrap().0);
             } else {
                 expiring = false;
@@ -129,11 +128,11 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
 #[cfg(test)]
 mod test {
 #![allow(deprecated)]
-    extern crate chrono;
+    extern crate time;
     extern crate rand;
 
     use super::MessageFilter;
-    use std::old_io;
+    use std::thread;
 
     fn generate_random_vec<T>(len: usize) -> Vec<T> where T: rand::Rand {
         let mut vec = Vec::<T>::with_capacity(len);
@@ -167,7 +166,7 @@ mod test {
 
     #[test]
     fn time_only() {
-        let time_to_live = chrono::duration::Duration::milliseconds(100);
+        let time_to_live = time::Duration::milliseconds(100);
         let mut msg_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);
 
         for i in 0..10 {
@@ -176,7 +175,7 @@ mod test {
             assert_eq!(msg_filter.len(), i + 1);
         }
 
-        old_io::timer::sleep(chrono::duration::Duration::milliseconds(100));
+        thread::sleep_ms(100);
         msg_filter.add(11);
 
         assert_eq!(msg_filter.len(), 1);
@@ -191,7 +190,7 @@ mod test {
     #[test]
     fn time_and_size() {
         let size = 10usize;
-        let time_to_live = chrono::duration::Duration::milliseconds(100);
+        let time_to_live = time::Duration::milliseconds(100);
         let mut msg_filter = MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);
 
         for i in 0..1000 {
@@ -208,7 +207,7 @@ mod test {
             }
         }
 
-        old_io::timer::sleep(chrono::duration::Duration::milliseconds(100));
+        thread::sleep_ms(100);
         msg_filter.add(1);
 
         assert_eq!(msg_filter.len(), 1);
@@ -217,7 +216,7 @@ mod test {
     #[test]
     fn time_size_struct_value() {
         let size = 100usize;
-        let time_to_live = chrono::duration::Duration::milliseconds(100);
+        let time_to_live = time::Duration::milliseconds(100);
 
         #[derive(PartialEq, PartialOrd, Ord, Clone, Eq, Hash)]
         struct Temp {
@@ -240,7 +239,7 @@ mod test {
             }
         }
 
-        old_io::timer::sleep(chrono::duration::Duration::milliseconds(100));
+        thread::sleep_ms(100);
         msg_filter.add(Temp { id: generate_random_vec::<u8>(64), });
 
         assert_eq!(msg_filter.len(), 1);
