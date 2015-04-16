@@ -16,14 +16,14 @@
 // See the Licences for the specific language governing permissions and limitations relating to
 // use of the MaidSafe Software.
 
-#![feature(test, std_misc, old_io)]
+#![feature(test)]
 #![allow(non_snake_case, deprecated)]
-extern crate chrono;
+extern crate time;
 extern crate test;
 extern crate rand;
 extern crate message_filter;
 
-use std::old_io;
+use std::thread;
 use test::Bencher;
 use message_filter::MessageFilter;
 
@@ -74,7 +74,7 @@ fn bench_add_10000_1KB_msgs_to_1000_capacity (b: &mut Bencher) {
 
 #[bench]
 fn bench_add_1000_1KB_msgs_timeout (b: &mut Bencher) {
-  let time_to_live = chrono::duration::Duration::milliseconds(100);
+  let time_to_live = time::Duration::milliseconds(100);
   let mut my_cache = MessageFilter::<Vec<u8>>::with_expiry_duration(time_to_live);
 
   let bytes_len = 1024;
@@ -82,7 +82,7 @@ fn bench_add_1000_1KB_msgs_timeout (b: &mut Bencher) {
     my_cache.add(generate_random_vec::<u8>(bytes_len));
   }
   let content = generate_random_vec::<u8>(bytes_len);
-  old_io::timer::sleep(time_to_live);
+  thread::sleep_ms(100);
 
   b.iter(|| {
       my_cache.add(content.clone());
@@ -94,7 +94,7 @@ fn bench_add_1000_1KB_msgs_timeout (b: &mut Bencher) {
 // the following test can not achieve a convengence on performance
 // #[bench]
 // fn bench_add_1000_1MB_msgs_timeout (b: &mut Bencher) {
-//   let time_to_live = chrono::duration::Duration::milliseconds(100);
+//   let time_to_live = time::Duration::milliseconds(100);
 //   let mut my_cache = MessageFilter::<Vec<u8>>::with_expiry_duration(time_to_live);
 
 //   let mut contents = Vec::<Vec<u8>>::new();

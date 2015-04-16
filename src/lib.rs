@@ -34,14 +34,14 @@
 //!
 //!##Or as time based MessageFilter
 //! 
-//! `let time_to_live = chrono::duration::Duration::milliseconds(100);`
+//! `let time_to_live = time::Duration::milliseconds(100);`
 //!
 //! `let mut message_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);`
 //! 
 //!##Or as time or size limited cache
 //!
 //! ` let size = 10usize;
-//!     let time_to_live = chrono::duration::Duration::milliseconds(100);
+//!     let time_to_live = time::Duration::milliseconds(100);
 //!     let mut message_filter = MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);`
 
 
