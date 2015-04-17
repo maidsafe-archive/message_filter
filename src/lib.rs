@@ -22,7 +22,7 @@
        html_favicon_url = "http://maidsafe.net/img/favicon.ico",
               html_root_url = "http://dirvine.github.io/dirvine/message_filter/")]
 
-//! #message_filter limited via size or time  
+//! #Message filter limited via size or time  
 //! 
 //! This container allows time or size to be the limiting factor for any key types.
 //!

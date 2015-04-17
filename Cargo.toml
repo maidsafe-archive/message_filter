@@ -2,8 +2,8 @@
 
 name = "message_filter"
 version = "0.1.0"
-authors = ["David Irvine <david.irvine@maidsafe.net>"]
-description = "This is Pre alpha, and not useful, no code worth looking at."
+authors = ["MaidSafe Deve <david.irvine@maidsafe.net>"]
+description = "A message filter that can be controlled by limiting capacity or time to live"
 documentation = "http://dirvine.github.io/message_filter/"
 repository = "https://github.com/dirvine/message_filter"
 readme = "README.md"
