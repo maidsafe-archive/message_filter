@@ -4,7 +4,7 @@ A size based or time based message filter. Takes any generic type as key and wil
 
 |Crate|Travis|Appveyor|Coverage|
 |:------:|:-------:|:-------:|:-------:|
-|[![](http://meritbadge.herokuapp.com/message_filter)](https://crates.io/crates/message_filter)|[![Build Status](https://travis-ci.org/dirvine/message_filter.svg?branch=master)](https://travis-ci.org/dirvine/message_filter)|[![Build status](https://ci.appveyor.com/api/projects/status/jsuo65sa631h0kav?svg=true)](https://ci.appveyor.com/project/dirvine/message_filter)|[![Coverage Status](https://coveralls.io/repos/dirvine/message_filter/badge.svg)](https://coveralls.io/r/dirvine/message_filter)|
+|[![](http://meritbadge.herokuapp.com/message_filter)](https://crates.io/crates/message_filter)|[![Build Status](https://travis-ci.org/dirvine/message_filter.svg?branch=master)](https://travis-ci.org/dirvine/message_filter)|[![Build status](https://ci.appveyor.com/api/projects/status/u98ggp4mk4l76ic4/branch/master?svg=true)](https://ci.appveyor.com/project/dirvine/message-filter/branch/master)|[![Coverage Status](https://coveralls.io/repos/dirvine/message_filter/badge.svg)](https://coveralls.io/r/dirvine/message_filter)|
 
 | [Documentation](http://dirvine.github.io/message_filter/) | [MaidSafe System Documention](http://systemdocs.maidsafe.net/) | [MaidSafe web site](http://www.maidsafe.net) | [Safe Community site](https://forum.safenetwork.io) |
 
