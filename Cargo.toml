@@ -1,7 +1,7 @@
 [package]
 
 name = "message_filter"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["MaidSafe Development Team <dev@maidsafe.net>"]
 description = "A message filter that can be controlled by limiting capacity, or time to live"
 documentation = "http://dirvine.github.io/message_filter/"
