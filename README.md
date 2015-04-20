@@ -1,6 +1,6 @@
 # message_filter 
 
-A size based or time based message filter. Takes any generic type as key and will drop keys after a time period or size of container is reached (Lru Cache pattern). The filter has Add key method only. Delete will be added at a later stage. This is a handy container for network based systems to filter previously seen messages.
+A size or time based message filter that takes any generic type as a key and will drop keys after a time period, or once size of container is reached (LRU Cache pattern). The filter has Add key method only, a delete function will be added at a later stage. This is a handy container for network based systems to filter previously seen messages.
 
 |Crate|Travis|Appveyor|Coverage|
 |:------:|:-------:|:-------:|:-------:|
