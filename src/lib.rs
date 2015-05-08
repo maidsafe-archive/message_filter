@@ -17,6 +17,14 @@
 
 #![crate_name = "message_filter"]
 #![crate_type = "lib"]
+#![forbid(bad_style, missing_docs, warnings)]
+#![deny(deprecated, drop_with_repr_extern, improper_ctypes, non_shorthand_field_patterns,
+        overflowing_literals, plugin_as_library, private_no_mangle_fns, private_no_mangle_statics,
+        raw_pointer_derive, stable_features, unconditional_recursion, unknown_lints,
+        unsafe_code, unsigned_negation, unused, unused_allocation, unused_attributes,
+        unused_comparisons, unused_features, unused_parens, while_true)]
+#![warn(trivial_casts, trivial_numeric_casts, unused_extern_crates, unused_import_braces,
+        unused_qualifications, unused_results, variant_size_differences)]
 #![doc(html_logo_url = "http://maidsafe.net/img/Resources/branding/maidsafe_logo.fab2.png",
        html_favicon_url = "http://maidsafe.net/img/favicon.ico",
               html_root_url = "http://dirvine.github.io/dirvine/message_filter/")]
@@ -60,6 +68,7 @@ pub struct MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
 }
 /// Constructor for size (capacity) based MessageFilter
 impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
+    /// Constructor for capacity based MessageFilter
     pub fn with_capacity(capacity: usize) -> MessageFilter<V> {
         MessageFilter {
             set: HashSet::new(),
@@ -68,7 +77,7 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
             time_to_live: time::Duration::max_value(),
         }
     }
-/// Constructor for time based HashMap
+/// Constructor for time based MessageFilter
     pub fn with_expiry_duration(time_to_live: time::Duration) -> MessageFilter<V> {
         MessageFilter {
             set: HashSet::new(),
