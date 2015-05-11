@@ -4,7 +4,7 @@ A size or time based message filter that takes any generic type as a key and wil
 
 |Crate|Travis|Appveyor|Coverage|
 |:------:|:-------:|:-------:|:-------:|
-|[![](http://meritbadge.herokuapp.com/message_filter)](https://crates.io/crates/message_filter)|[![Build Status](https://travis-ci.org/maidsafe/message_filter.svg?branch=master)](https://travis-ci.org/maidsafe/message_filter)|[![Build status](https://ci.appveyor.com/api/projects/status/pxcwlrxufqaxqq0d?svg=true)](https://ci.appveyor.com/project/dirvine/message-filter-9q8x6)|[![Coverage Status](https://coveralls.io/repos/dirvine/message_filter/badge.svg)](https://coveralls.io/r/dirvine/message_filter)|
+|[![](http://meritbadge.herokuapp.com/message_filter)](https://crates.io/crates/message_filter)|[![Build Status](https://travis-ci.org/maidsafe/message_filter.svg?branch=master)](https://travis-ci.org/maidsafe/message_filter)|[![Build status](https://ci.appveyor.com/api/projects/status/xj1muadwnd1ysmmc/branch/master?svg=true)](https://ci.appveyor.com/project/dirvine/lru-time-cache-o9t28/branch/master)|[![Coverage Status](https://coveralls.io/repos/maidsafe/message_filter/badge.svg)](https://coveralls.io/r/maidsafe/message_filter)|
 
 | [ API Documentation](http://maidsafe.github.io/message_filter/) | [MaidSafe System Documention](http://systemdocs.maidsafe.net/) | [MaidSafe web site](http://www.maidsafe.net) | [Safe Community site](https://forum.safenetwork.io) |
 
