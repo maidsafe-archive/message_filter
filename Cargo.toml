@@ -1,14 +1,13 @@
 [package]
-
 name = "message_filter"
 version = "0.1.1"
-authors = ["MaidSafe Development Team <dev@maidsafe.net>"]
+authors = ["MaidSafe Developers <dev@maidsafe.net>"]
 description = "A message filter that can be controlled by limiting capacity, or time to live"
-documentation = "http://maidsafe.github.io/message_filter/latest/"
+documentation = "http://maidsafe.net/message_filter/latest"
 repository = "https://github.com/maidsafe/message_filter"
 readme = "README.md"
 license = "GPL-3.0"
-homepage = "http://www.maidsafe.net"
+homepage = "http://maidsafe.net"
 
 [dependencies]
 rand = "*"
