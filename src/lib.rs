@@ -106,16 +106,27 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
             trimmed = self.set.len() - self.capacity;
         }
         for _ in 0..trimmed {
-            self.set.remove(&self.list.pop_front().unwrap().0);
+            let _ = match self.list.pop_front() {
+            Some(item) => self.set.remove(&item.0),    
+            None => false,    
+            };
         }
 
-        let mut expiring = true;
-        while expiring {
-            if self.time_to_live != time::Duration::max_value() &&
-               self.list.front().unwrap().1 + self.time_to_live < time::SteadyTime::now() {
-                self.set.remove(&self.list.pop_front().unwrap().0);
-            } else {
-                expiring = false;
+        loop {
+            let pop = match self.list.front() {
+                Some(item) =>   if self.time_to_live != time::Duration::max_value() &&
+                    item.1 + self.time_to_live < time::SteadyTime::now() {
+                        true
+                    } else { 
+                        break 
+                    },
+                        None => break,
+            };
+            if pop { 
+                match self.list.pop_front() {
+                    Some(item) => self.set.remove(&item.0),    
+                    None => false,    
+                };
             }
         }
     }
