@@ -1,6 +1,7 @@
 env:
   global:
-    secure: fCU0zX/BW0MlzTcIFtVI8Ipn69ECh7iix0YFZ01H2GTpQujOieyL2lFo92rlryNKxc5ghhvcBfIOLwO42LY+hO81RiMJm1mG+SSSK/S8q4Do+WIXZei2THUx1T8tNw0E5eUGVrncXITnTSqsTA9+2GLeyQKaoPtbaPf9nQkCr8I=
+    - secure: fCU0zX/BW0MlzTcIFtVI8Ipn69ECh7iix0YFZ01H2GTpQujOieyL2lFo92rlryNKxc5ghhvcBfIOLwO42LY+hO81RiMJm1mG+SSSK/S8q4Do+WIXZei2THUx1T8tNw0E5eUGVrncXITnTSqsTA9+2GLeyQKaoPtbaPf9nQkCr8I=
+    - ElfUtilsVersion=0.163
 os:
   - linux
   - osx
@@ -13,7 +14,10 @@ sudo: false
 branches:
   only:
     - master
+cache:
+  directories:
+    - $HOME/elfutils-$ElfUtilsVersion
 script:
   - curl -sSL https://github.com/maidsafe/QA/raw/master/Bash%20Scripts/Travis/build_and_run_tests.sh | bash
 after_success:
-  - curl -sSL https://github.com/maidsafe/QA/raw/master/Bash%20Scripts/Travis/deploy_gh-pages.sh | bash
+  - curl -sSL https://github.com/maidsafe/QA/raw/master/Bash%20Scripts/Travis/after_success.sh | bash
