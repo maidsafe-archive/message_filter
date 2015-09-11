@@ -29,22 +29,22 @@
        html_favicon_url = "http://maidsafe.net/img/favicon.ico",
               html_root_url = "http://dirvine.github.io/dirvine/message_filter/")]
 
-//! #Message filter limited via size or time  
-//! 
+//! #Message filter limited via size or time
+//!
 //! This container allows time or size to be the limiting factor for any key types.
 //!
 //!#Use
 //!
-//!##To use as a size based MessageFilter 
+//!##To use as a size based MessageFilter
 //!
 //!`let mut message_filter = MessageFilter::<usize>::with_capacity(size);`
 //!
 //!##Or as a time based MessageFilter
-//! 
+//!
 //! `let time_to_live = time::Duration::milliseconds(100);`
 //!
 //! `let mut message_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);`
-//! 
+//!
 //!##Or as time or size limited cache
 //!
 //! ` let size = 10usize;
@@ -60,7 +60,9 @@ use std::hash::Hash;
 
 /// Allows message filter container which may be limited by size or time.
 /// Get(value) is not required as only value is stored
-pub struct MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
+pub struct MessageFilter<V>
+    where V: PartialOrd + Ord + Clone + Hash
+{
     set: HashSet<V>,
     list: VecDeque<(V, time::SteadyTime)>,
     capacity: usize,
@@ -77,7 +79,7 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
             time_to_live: time::Duration::max_value(),
         }
     }
-/// Constructor for time based MessageFilter
+    /// Constructor for time based MessageFilter
     pub fn with_expiry_duration(time_to_live: time::Duration) -> MessageFilter<V> {
         MessageFilter {
             set: HashSet::new(),
@@ -86,8 +88,10 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
             time_to_live: time_to_live,
         }
     }
-/// Constructor for dual feature capacity or time based MessageFilter
-    pub fn with_expiry_duration_and_capacity(time_to_live: time::Duration, capacity: usize) -> MessageFilter<V> {
+    /// Constructor for dual feature capacity or time based MessageFilter
+    pub fn with_expiry_duration_and_capacity(time_to_live: time::Duration,
+                                             capacity: usize)
+                                             -> MessageFilter<V> {
         MessageFilter {
             set: HashSet::new(),
             list: VecDeque::new(),
@@ -95,7 +99,7 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
             time_to_live: time_to_live,
         }
     }
-/// Add a value to MessageFilter
+    /// Add a value to MessageFilter
     pub fn add(&mut self, value: V) {
         if self.set.insert(value.clone()) {
             self.list.push_back((value, time::SteadyTime::now()));
@@ -107,34 +111,34 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
         }
         for _ in 0..trimmed {
             let _ = match self.list.pop_front() {
-            Some(item) => self.set.remove(&item.0),    
-            None => false,    
+                Some(item) => self.set.remove(&item.0),
+                None => false,
             };
         }
 
         loop {
             let pop = match self.list.front() {
-                Some(item) =>   if self.time_to_live != time::Duration::max_value() &&
-                    item.1 + self.time_to_live < time::SteadyTime::now() {
-                        true
-                    } else { 
-                        break 
-                    },
-                        None => break,
+                Some(item) => if self.time_to_live != time::Duration::max_value() &&
+                                 item.1 + self.time_to_live < time::SteadyTime::now() {
+                    true
+                } else {
+                    break
+                },
+                None => break,
             };
-            if pop { 
+            if pop {
                 match self.list.pop_front() {
-                    Some(item) => self.set.remove(&item.0),    
-                    None => false,    
+                    Some(item) => self.set.remove(&item.0),
+                    None => false,
                 };
             }
         }
     }
-/// Check for existence of a key
+    /// Check for existence of a key
     pub fn check(&self, value: &V) -> bool {
         self.set.contains(value)
     }
-/// Current size of cache
+    /// Current size of cache
     pub fn len(&self) -> usize {
         self.set.len()
     }
@@ -151,7 +155,8 @@ mod test {
     use std::thread;
     use super::MessageFilter;
 
-    fn generate_random_vec<T>(len: usize) -> Vec<T> where T: rand::Rand {
+    fn generate_random_vec<T>(len: usize) -> Vec<T>
+        where T: rand::Rand {
         let mut vec = Vec::<T>::with_capacity(len);
         for _ in 0..len {
             vec.push(rand::random::<T>());
@@ -208,7 +213,8 @@ mod test {
     fn time_and_size() {
         let size = 10usize;
         let time_to_live = time::Duration::milliseconds(100);
-        let mut msg_filter = MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);
+        let mut msg_filter =
+            MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);
 
         for i in 0..1000 {
             if i < size {
@@ -240,7 +246,8 @@ mod test {
             id: Vec<u8>,
         }
 
-        let mut msg_filter = MessageFilter::<Temp>::with_expiry_duration_and_capacity(time_to_live, size);
+        let mut msg_filter = MessageFilter::<Temp>::with_expiry_duration_and_capacity(time_to_live,
+                                                                                      size);
 
         for i in 0..1000 {
             if i < size {
