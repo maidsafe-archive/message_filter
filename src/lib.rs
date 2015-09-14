@@ -101,6 +101,8 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
     }
     /// Add a value to MessageFilter
     pub fn add(&mut self, value: V) {
+        self.remove_expired();
+
         if self.set.insert(value.clone()) {
             self.list.push_back((value, time::SteadyTime::now()));
         }
@@ -115,7 +117,18 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
                 None => false,
             };
         }
+    }
+    /// Check for existence of a key
+    pub fn check(&mut self, value: &V) -> bool {
+        self.remove_expired();
+        self.set.contains(value)
+    }
+    /// Current size of cache
+    pub fn len(&self) -> usize {
+        self.set.len()
+    }
 
+    fn remove_expired(&mut self) {
         loop {
             let pop = match self.list.front() {
                 Some(item) => if self.time_to_live != time::Duration::max_value() &&
@@ -134,15 +147,6 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
             }
         }
     }
-    /// Check for existence of a key
-    pub fn check(&self, value: &V) -> bool {
-        self.set.contains(value)
-    }
-    /// Current size of cache
-    pub fn len(&self) -> usize {
-        self.set.len()
-    }
-
 }
 
 
