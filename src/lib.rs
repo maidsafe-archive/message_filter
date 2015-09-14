@@ -77,7 +77,7 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
             time_to_live: time::Duration::max_value(),
         }
     }
-/// Constructor for time based MessageFilter
+    /// Constructor for time based MessageFilter
     pub fn with_expiry_duration(time_to_live: time::Duration) -> MessageFilter<V> {
         MessageFilter {
             set: HashSet::new(),
@@ -86,7 +86,7 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
             time_to_live: time_to_live,
         }
     }
-/// Constructor for dual feature capacity or time based MessageFilter
+    /// Constructor for dual feature capacity or time based MessageFilter
     pub fn with_expiry_duration_and_capacity(time_to_live: time::Duration, capacity: usize) -> MessageFilter<V> {
         MessageFilter {
             set: HashSet::new(),
@@ -95,8 +95,10 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
             time_to_live: time_to_live,
         }
     }
-/// Add a value to MessageFilter
+    /// Add a value to MessageFilter
     pub fn add(&mut self, value: V) {
+        self.remove_expired();
+
         if self.set.insert(value.clone()) {
             self.list.push_back((value, time::SteadyTime::now()));
         }
@@ -111,16 +113,27 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
             None => false,    
             };
         }
+    }
+    /// Check for existence of a key
+    pub fn check(&mut self, value: &V) -> bool {
+        self.remove_expired();
+        self.set.contains(value)
+    }
+    /// Current size of cache
+    pub fn len(&self) -> usize {
+        self.set.len()
+    }
 
+    fn remove_expired(&mut self) {
         loop {
             let pop = match self.list.front() {
-                Some(item) =>   if self.time_to_live != time::Duration::max_value() &&
+                Some(item) => if self.time_to_live != time::Duration::max_value() &&
                     item.1 + self.time_to_live < time::SteadyTime::now() {
                         true
                     } else { 
                         break 
                     },
-                        None => break,
+                None => break,
             };
             if pop { 
                 match self.list.pop_front() {
@@ -130,15 +143,6 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
             }
         }
     }
-/// Check for existence of a key
-    pub fn check(&self, value: &V) -> bool {
-        self.set.contains(value)
-    }
-/// Current size of cache
-    pub fn len(&self) -> usize {
-        self.set.len()
-    }
-
 }
 
 
