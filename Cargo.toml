@@ -1,6 +1,6 @@
 [package]
 name = "message_filter"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["MaidSafe Developers <dev@maidsafe.net>"]
 description = "A message filter that can be controlled by limiting capacity, or time to live"
 documentation = "http://maidsafe.net/message_filter/latest"
