@@ -15,8 +15,19 @@
 // Please review the Licences for the specific language governing permissions and limitations
 // relating to use of the SAFE Network Software.
 
+#![forbid(bad_style, exceeding_bitshifts, mutable_transmutes, no_mangle_const_items,
+          unknown_crate_types, warnings)]
+#![deny(deprecated, drop_with_repr_extern, improper_ctypes, missing_docs,
+        non_shorthand_field_patterns, overflowing_literals, plugin_as_library,
+        private_no_mangle_fns, private_no_mangle_statics, raw_pointer_derive, stable_features,
+        unconditional_recursion, unknown_lints, unsafe_code, unused, unused_allocation,
+        unused_attributes, unused_comparisons, unused_features, unused_parens, while_true)]
+#![warn(trivial_casts, trivial_numeric_casts, unused_extern_crates, unused_import_braces,
+        unused_qualifications, unused_results, variant_size_differences)]
+#![allow(box_pointers, fat_ptr_transmutes, missing_copy_implementations,
+         missing_debug_implementations)]
 #![feature(test)]
-#![allow(non_snake_case, deprecated)]
+
 extern crate time;
 extern crate test;
 extern crate rand;
@@ -36,7 +47,7 @@ fn generate_random_vec<T>(len: usize) -> Vec<T>
 }
 
 #[bench]
-fn bench_add_1000_1KB_msgs_to_100_capacity(b: &mut Bencher) {
+fn bench_add_1000_1kb_messages_to_100_capacity(b: &mut Bencher) {
     let mut my_cache = MessageFilter::<Vec<u8>>::with_capacity(100);
     let mut contents = Vec::<Vec<u8>>::new();
     let bytes_len = 1024;
@@ -54,7 +65,7 @@ fn bench_add_1000_1KB_msgs_to_100_capacity(b: &mut Bencher) {
 }
 
 #[bench]
-fn bench_add_10000_1KB_msgs_to_1000_capacity(b: &mut Bencher) {
+fn bench_add_10000_1kb_messages_to_1000_capacity(b: &mut Bencher) {
     let mut my_cache = MessageFilter::<Vec<u8>>::with_capacity(1000);
     let mut contents = Vec::<Vec<u8>>::new();
     let bytes_len = 1024;
@@ -73,7 +84,7 @@ fn bench_add_10000_1KB_msgs_to_1000_capacity(b: &mut Bencher) {
 
 
 #[bench]
-fn bench_add_1000_1KB_msgs_timeout(b: &mut Bencher) {
+fn bench_add_1000_1kb_messages_timeout(b: &mut Bencher) {
     let time_to_live = time::Duration::milliseconds(100);
     let mut my_cache = MessageFilter::<Vec<u8>>::with_expiry_duration(time_to_live);
 

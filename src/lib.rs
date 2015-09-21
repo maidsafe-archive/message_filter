@@ -15,43 +15,114 @@
 // Please review the Licences for the specific language governing permissions and limitations
 // relating to use of the SAFE Network Software.
 
-#![crate_name = "message_filter"]
-#![crate_type = "lib"]
-#![forbid(bad_style, missing_docs, warnings)]
-#![deny(deprecated, drop_with_repr_extern, improper_ctypes, non_shorthand_field_patterns,
-        overflowing_literals, plugin_as_library, private_no_mangle_fns, private_no_mangle_statics,
-        raw_pointer_derive, stable_features, unconditional_recursion, unknown_lints,
-        unsafe_code, unused, unused_allocation, unused_attributes, unused_comparisons,
-        unused_features, unused_parens, while_true)]
-#![warn(trivial_casts, trivial_numeric_casts, unused_extern_crates, unused_import_braces,
-        unused_qualifications, unused_results, variant_size_differences)]
-#![doc(html_logo_url = "https://raw.githubusercontent.com/maidsafe/QA/master/Images/maidsafe_logo.png",
+//! # Message Filter
+//!
+//! A size or time based message filter that takes any generic type as a key and will drop keys
+//! after a time period, or once a maximum number of messages is reached (LRU Cache pattern).  The
+//! filter currently only allows adding messages; a delete function will be provided at a later
+//! stage.
+//!
+//! This library can be used by network based systems to filter previously seen messages.
+//!
+//! # Examples
+//!
+//! ```
+//! extern crate message_filter;
+//! extern crate time;
+//! use ::message_filter::MessageFilter;
+//!
+//! # fn main() {
+//! // Construct a `MessageFilter` of `u8`s, limited by message count
+//! let max_count = 10;
+//! let message_filter = MessageFilter::<u8>::with_capacity(max_count);
+//!
+//! // Construct a `MessageFilter` of `String`s, limited by expiry time
+//! let time_to_live = ::time::Duration::milliseconds(100);
+//! let message_filter = MessageFilter::<String>::with_expiry_duration(time_to_live);
+//!
+//! // Construct a `MessageFilter` of `Vec<u8>`s, limited by message count and expiry time
+//! let message_filter = MessageFilter::<Vec<u8>>::with_expiry_duration_and_capacity(time_to_live,
+//!                                                                                  max_count);
+//! # }
+//! ```
+
+#![doc(html_logo_url =
+           "https://raw.githubusercontent.com/maidsafe/QA/master/Images/maidsafe_logo.png",
        html_favicon_url = "http://maidsafe.net/img/favicon.ico",
-              html_root_url = "http://dirvine.github.io/dirvine/message_filter/")]
+       html_root_url = "http://maidsafe.github.io/message_filter")]
 
-//! #Message filter limited via size or time
-//!
-//! This container allows time or size to be the limiting factor for any key types.
-//!
-//!#Use
-//!
-//!##To use as a size based MessageFilter
-//!
-//!`let mut message_filter = MessageFilter::<usize>::with_capacity(size);`
-//!
-//!##Or as a time based MessageFilter
-//!
-//! `let time_to_live = time::Duration::milliseconds(100);`
-//!
-//! `let mut message_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);`
-//!
-//!##Or as time or size limited cache
-//!
-//! ` let size = 10usize;
-//!     let time_to_live = time::Duration::milliseconds(100);
-//!     let mut message_filter = MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);`
+#![forbid(
+    bad_style,              // Includes:
+                            // - non_camel_case_types:   types, variants, traits and type parameters
+                            //                           should have camel case names,
+                            // - non_snake_case:         methods, functions, lifetime parameters and
+                            //                           modules should have snake case names
+                            // - non_upper_case_globals: static constants should have uppercase
+                            //                           identifiers
+    exceeding_bitshifts,    // shift exceeds the type's number of bits
+    mutable_transmutes,     // mutating transmuted &mut T from &T may cause undefined behavior
+    no_mangle_const_items,  // const items will not have their symbols exported
+    unknown_crate_types,    // unknown crate type found in #[crate_type] directive
+    warnings                // mass-change the level for lints which produce warnings
+    )]
 
+#![deny(
+    deprecated,                    // detects use of #[deprecated] items
+    drop_with_repr_extern,         // use of #[repr(C)] on a type that implements Drop
+    improper_ctypes,               // proper use of libc types in foreign modules
+    missing_docs,                  // detects missing documentation for public members
+    non_shorthand_field_patterns,  // using `Struct { x: x }` instead of `Struct { x }`
+    overflowing_literals,          // literal out of range for its type
+    plugin_as_library,             // compiler plugin used as ordinary library in non-plugin crate
+    private_no_mangle_fns,         // functions marked #[no_mangle] should be exported
+    private_no_mangle_statics,     // statics marked #[no_mangle] should be exported
+    raw_pointer_derive,            // uses of #[derive] with raw pointers are rarely correct
+    stable_features,               // stable features found in #[feature] directive
+    unconditional_recursion,       // functions that cannot return without calling themselves
+    unknown_lints,                 // unrecognized lint attribute
+    unsafe_code,                   // usage of `unsafe` code
+    unused,                        // Includes:
+                                   // - unused_imports:     imports that are never used
+                                   // - unused_variables:   detect variables which are not used in
+                                   //                       any way
+                                   // - unused_assignments: detect assignments that will never be
+                                   //                       read
+                                   // - dead_code:          detect unused, unexported items
+                                   // - unused_mut:         detect mut variables which don't need to
+                                   //                       be mutable
+                                   // - unreachable_code:   detects unreachable code paths
+                                   // - unused_must_use:    unused result of a type flagged as
+                                   //                       #[must_use]
+                                   // - unused_unsafe:      unnecessary use of an `unsafe` block
+                                   // - path_statements: path statements with no effect
+    unused_allocation,             // detects unnecessary allocations that can be eliminated
+    unused_attributes,             // detects attributes that were not used by the compiler
+    unused_comparisons,            // comparisons made useless by limits of the types involved
+    unused_features,               // unused or unknown features found in crate-level #[feature]
+                                   // directives
+    unused_parens,                 // `if`, `match`, `while` and `return` do not need parentheses
+    while_true                     // suggest using `loop { }` instead of `while true { }`
+    )]
 
+#![warn(
+    trivial_casts,            // detects trivial casts which could be removed
+    trivial_numeric_casts,    // detects trivial casts of numeric types which could be removed
+    unused_extern_crates,     // extern crates that are never used
+    unused_import_braces,     // unnecessary braces around an imported item
+    unused_qualifications,    // detects unnecessarily qualified names
+    unused_results,           // unused result of an expression in a statement
+    variant_size_differences  // detects enums with widely varying variant sizes
+    )]
+
+#![allow(
+    box_pointers,                  // use of owned (Box type) heap memory
+    fat_ptr_transmutes,            // detects transmutes of fat pointers
+    missing_copy_implementations,  // detects potentially-forgotten implementations of `Copy`
+    missing_debug_implementations  // detects missing implementations of fmt::Debug
+    )]
+
+#[cfg(test)]
+extern crate rand;
 extern crate time;
 
 use std::usize;
@@ -153,17 +224,14 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
 
 #[cfg(test)]
 mod test {
-#![allow(deprecated)]
-    extern crate time;
-    extern crate rand;
     use std::thread;
     use super::MessageFilter;
 
     fn generate_random_vec<T>(len: usize) -> Vec<T>
-        where T: rand::Rand {
+        where T: ::rand::Rand {
         let mut vec = Vec::<T>::with_capacity(len);
         for _ in 0..len {
-            vec.push(rand::random::<T>());
+            vec.push(::rand::random::<T>());
         }
         vec
     }
@@ -192,7 +260,7 @@ mod test {
 
     #[test]
     fn time_only() {
-        let time_to_live = time::Duration::milliseconds(100);
+        let time_to_live = ::time::Duration::milliseconds(100);
         let mut msg_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);
 
         for i in 0..10 {
@@ -216,7 +284,7 @@ mod test {
     #[test]
     fn time_and_size() {
         let size = 10usize;
-        let time_to_live = time::Duration::milliseconds(100);
+        let time_to_live = ::time::Duration::milliseconds(100);
         let mut msg_filter =
             MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);
 
@@ -243,7 +311,7 @@ mod test {
     #[test]
     fn time_size_struct_value() {
         let size = 100usize;
-        let time_to_live = time::Duration::milliseconds(100);
+        let time_to_live = ::time::Duration::milliseconds(100);
 
         #[derive(PartialEq, PartialOrd, Ord, Clone, Eq, Hash)]
         struct Temp {
