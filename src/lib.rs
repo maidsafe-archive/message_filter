@@ -125,47 +125,43 @@
 extern crate rand;
 extern crate time;
 
-use std::usize;
-use std::collections::{HashSet, VecDeque};
-use std::hash::Hash;
-
 /// Allows message filter container which may be limited by size or time.
 /// Get(value) is not required as only value is stored
 pub struct MessageFilter<V>
-    where V: PartialOrd + Ord + Clone + Hash
+    where V: PartialOrd + Ord + Clone + ::std::hash::Hash
 {
-    set: HashSet<V>,
-    list: VecDeque<(V, time::SteadyTime)>,
+    set: ::std::collections::HashSet<V>,
+    list: ::std::collections::VecDeque<(V, ::time::SteadyTime)>,
     capacity: usize,
-    time_to_live: time::Duration,
+    time_to_live: ::time::Duration,
 }
 /// Constructor for size (capacity) based MessageFilter
-impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
+impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + ::std::hash::Hash {
     /// Constructor for capacity based MessageFilter
     pub fn with_capacity(capacity: usize) -> MessageFilter<V> {
         MessageFilter {
-            set: HashSet::new(),
-            list: VecDeque::new(),
+            set: ::std::collections::HashSet::new(),
+            list: ::std::collections::VecDeque::new(),
             capacity: capacity,
-            time_to_live: time::Duration::max_value(),
+            time_to_live: ::time::Duration::max_value(),
         }
     }
     /// Constructor for time based MessageFilter
-    pub fn with_expiry_duration(time_to_live: time::Duration) -> MessageFilter<V> {
+    pub fn with_expiry_duration(time_to_live: ::time::Duration) -> MessageFilter<V> {
         MessageFilter {
-            set: HashSet::new(),
-            list: VecDeque::new(),
-            capacity: usize::MAX,
+            set: ::std::collections::HashSet::new(),
+            list: ::std::collections::VecDeque::new(),
+            capacity: ::std::usize::MAX,
             time_to_live: time_to_live,
         }
     }
     /// Constructor for dual feature capacity or time based MessageFilter
-    pub fn with_expiry_duration_and_capacity(time_to_live: time::Duration,
+    pub fn with_expiry_duration_and_capacity(time_to_live: ::time::Duration,
                                              capacity: usize)
                                              -> MessageFilter<V> {
         MessageFilter {
-            set: HashSet::new(),
-            list: VecDeque::new(),
+            set: ::std::collections::HashSet::new(),
+            list: ::std::collections::VecDeque::new(),
             capacity: capacity,
             time_to_live: time_to_live,
         }
@@ -175,7 +171,7 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
         self.remove_expired();
 
         if self.set.insert(value.clone()) {
-            self.list.push_back((value, time::SteadyTime::now()));
+            self.list.push_back((value, ::time::SteadyTime::now()));
         }
 
         let mut trimmed = 0;
@@ -202,8 +198,8 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
     fn remove_expired(&mut self) {
         loop {
             let pop = match self.list.front() {
-                Some(item) => if self.time_to_live != time::Duration::max_value() &&
-                                 item.1 + self.time_to_live < time::SteadyTime::now() {
+                Some(item) => if self.time_to_live != ::time::Duration::max_value() &&
+                                 item.1 + self.time_to_live < ::time::SteadyTime::now() {
                     true
                 } else {
                     break
@@ -224,9 +220,6 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + Hash {
 
 #[cfg(test)]
 mod test {
-    use std::thread;
-    use super::MessageFilter;
-
     fn generate_random_vec<T>(len: usize) -> Vec<T>
         where T: ::rand::Rand {
         let mut vec = Vec::<T>::with_capacity(len);
@@ -239,7 +232,7 @@ mod test {
     #[test]
     fn size_only() {
         let size = 10usize;
-        let mut msg_filter = MessageFilter::<usize>::with_capacity(size);
+        let mut msg_filter = super::MessageFilter::<usize>::with_capacity(size);
 
         for i in 0..10 {
             println!("i : {} ", i);
@@ -261,7 +254,7 @@ mod test {
     #[test]
     fn time_only() {
         let time_to_live = ::time::Duration::milliseconds(100);
-        let mut msg_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);
+        let mut msg_filter = super::MessageFilter::<usize>::with_expiry_duration(time_to_live);
 
         for i in 0..10 {
             assert_eq!(msg_filter.len(), i);
@@ -269,7 +262,7 @@ mod test {
             assert_eq!(msg_filter.len(), i + 1);
         }
 
-        thread::sleep_ms(100);
+        ::std::thread::sleep_ms(100);
         msg_filter.add(11);
 
         assert_eq!(msg_filter.len(), 1);
@@ -286,7 +279,7 @@ mod test {
         let size = 10usize;
         let time_to_live = ::time::Duration::milliseconds(100);
         let mut msg_filter =
-            MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);
+            super::MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);
 
         for i in 0..1000 {
             if i < size {
@@ -302,7 +295,7 @@ mod test {
             }
         }
 
-        thread::sleep_ms(100);
+        ::std::thread::sleep_ms(100);
         msg_filter.add(1);
 
         assert_eq!(msg_filter.len(), 1);
@@ -318,8 +311,8 @@ mod test {
             id: Vec<u8>,
         }
 
-        let mut msg_filter = MessageFilter::<Temp>::with_expiry_duration_and_capacity(time_to_live,
-                                                                                      size);
+        let mut msg_filter =
+            super::MessageFilter::<Temp>::with_expiry_duration_and_capacity(time_to_live, size);
 
         for i in 0..1000 {
             if i < size {
@@ -335,7 +328,7 @@ mod test {
             }
         }
 
-        thread::sleep_ms(100);
+        ::std::thread::sleep_ms(100);
         msg_filter.add(Temp { id: generate_random_vec::<u8>(64), });
 
         assert_eq!(msg_filter.len(), 1);

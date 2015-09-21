@@ -33,10 +33,6 @@ extern crate test;
 extern crate rand;
 extern crate message_filter;
 
-use std::thread;
-use test::Bencher;
-use message_filter::MessageFilter;
-
 fn generate_random_vec<T>(len: usize) -> Vec<T>
     where T: rand::Rand {
     let mut vec = Vec::<T>::with_capacity(len);
@@ -47,8 +43,8 @@ fn generate_random_vec<T>(len: usize) -> Vec<T>
 }
 
 #[bench]
-fn bench_add_1000_1kb_messages_to_100_capacity(b: &mut Bencher) {
-    let mut my_cache = MessageFilter::<Vec<u8>>::with_capacity(100);
+fn bench_add_1000_1kb_messages_to_100_capacity(b: &mut ::test::Bencher) {
+    let mut my_cache = ::message_filter::MessageFilter::<Vec<u8>>::with_capacity(100);
     let mut contents = Vec::<Vec<u8>>::new();
     let bytes_len = 1024;
     for _ in 0..1000 {
@@ -56,17 +52,17 @@ fn bench_add_1000_1kb_messages_to_100_capacity(b: &mut Bencher) {
     }
 
     b.iter(|| {
-    for i in 0..1000 {
-  	  my_cache.add(contents[i].clone());
-    }
-  });
+        for i in 0..1000 {
+  	        my_cache.add(contents[i].clone());
+        }
+    });
     b.bytes = 1000 * bytes_len as u64;
     assert_eq!(my_cache.len(), 100);
 }
 
 #[bench]
-fn bench_add_10000_1kb_messages_to_1000_capacity(b: &mut Bencher) {
-    let mut my_cache = MessageFilter::<Vec<u8>>::with_capacity(1000);
+fn bench_add_10000_1kb_messages_to_1000_capacity(b: &mut ::test::Bencher) {
+    let mut my_cache = ::message_filter::MessageFilter::<Vec<u8>>::with_capacity(1000);
     let mut contents = Vec::<Vec<u8>>::new();
     let bytes_len = 1024;
     for _ in 0..10000 {
@@ -74,30 +70,31 @@ fn bench_add_10000_1kb_messages_to_1000_capacity(b: &mut Bencher) {
     }
 
     b.iter(|| {
-    for i in 0..10000 {
-      my_cache.add(contents[i].clone());
-    }
-  });
+        for i in 0..10000 {
+            my_cache.add(contents[i].clone());
+        }
+    });
     b.bytes = 10000 * bytes_len as u64;
     assert_eq!(my_cache.len(), 1000);
 }
 
 
 #[bench]
-fn bench_add_1000_1kb_messages_timeout(b: &mut Bencher) {
+fn bench_add_1000_1kb_messages_timeout(b: &mut ::test::Bencher) {
     let time_to_live = time::Duration::milliseconds(100);
-    let mut my_cache = MessageFilter::<Vec<u8>>::with_expiry_duration(time_to_live);
+    let mut my_cache =
+        ::message_filter::MessageFilter::<Vec<u8>>::with_expiry_duration(time_to_live);
 
     let bytes_len = 1024;
     for _ in 0..1000 {
         my_cache.add(generate_random_vec::<u8>(bytes_len));
     }
     let content = generate_random_vec::<u8>(bytes_len);
-    thread::sleep_ms(100);
+    ::std::thread::sleep_ms(100);
 
     b.iter(|| {
-      my_cache.add(content.clone());
-  });
+        my_cache.add(content.clone());
+    });
     b.bytes = bytes_len as u64;
     assert_eq!(my_cache.len(), 1);
 }
