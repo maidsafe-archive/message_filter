@@ -126,18 +126,18 @@ extern crate rand;
 extern crate time;
 
 /// Implementation of [message filter](index.html#message-filter).
-pub struct MessageFilter<V>
-    where V: PartialOrd + Ord + Clone + ::std::hash::Hash
+pub struct MessageFilter<Message>
+    where Message: PartialOrd + Ord + Clone + ::std::hash::Hash
 {
-    set: ::std::collections::HashSet<V>,
-    list: ::std::collections::VecDeque<(V, ::time::SteadyTime)>,
+    set: ::std::collections::HashSet<Message>,
+    list: ::std::collections::VecDeque<(Message, ::time::SteadyTime)>,
     capacity: usize,
     time_to_live: ::time::Duration,
 }
 
-impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + ::std::hash::Hash {
+impl<Message> MessageFilter<Message> where Message: PartialOrd + Ord + Clone + ::std::hash::Hash {
     /// Constructor for capacity based `MessageFilter`.
-    pub fn with_capacity(capacity: usize) -> MessageFilter<V> {
+    pub fn with_capacity(capacity: usize) -> MessageFilter<Message> {
         MessageFilter {
             set: ::std::collections::HashSet::new(),
             list: ::std::collections::VecDeque::new(),
@@ -147,7 +147,7 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + ::std::hash::Hash {
     }
 
     /// Constructor for time based `MessageFilter`.
-    pub fn with_expiry_duration(time_to_live: ::time::Duration) -> MessageFilter<V> {
+    pub fn with_expiry_duration(time_to_live: ::time::Duration) -> MessageFilter<Message> {
         MessageFilter {
             set: ::std::collections::HashSet::new(),
             list: ::std::collections::VecDeque::new(),
@@ -159,7 +159,7 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + ::std::hash::Hash {
     /// Constructor for dual-feature capacity and time based `MessageFilter`.
     pub fn with_expiry_duration_and_capacity(time_to_live: ::time::Duration,
                                              capacity: usize)
-                                             -> MessageFilter<V> {
+                                             -> MessageFilter<Message> {
         MessageFilter {
             set: ::std::collections::HashSet::new(),
             list: ::std::collections::VecDeque::new(),
@@ -170,11 +170,11 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + ::std::hash::Hash {
 
     /// Removes any expired messages, then adds `message`, then removes enough older messages until
     /// the message count is at or below `capacity`.
-    pub fn add(&mut self, value: V) {
+    pub fn add(&mut self, message: Message) {
         self.remove_expired();
 
-        if self.set.insert(value.clone()) {
-            self.list.push_back((value, ::time::SteadyTime::now()));
+        if self.set.insert(message.clone()) {
+            self.list.push_back((message, ::time::SteadyTime::now()));
         }
 
         let mut trimmed = 0;
@@ -190,9 +190,9 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + ::std::hash::Hash {
     }
 
     /// Removes any expired messages, then returns whether `message` exists in the filter or not.
-    pub fn check(&mut self, value: &V) -> bool {
+    pub fn check(&mut self, message: &Message) -> bool {
         self.remove_expired();
-        self.set.contains(value)
+        self.set.contains(message)
     }
 
     /// Returns the size of the cache, i.e. the number of cached messages.
