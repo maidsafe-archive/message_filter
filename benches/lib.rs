@@ -99,7 +99,7 @@ fn bench_add_1000_1kb_messages_timeout(b: &mut ::test::Bencher) {
     assert_eq!(my_cache.len(), 1);
 }
 
-// the following test can not achieve a convengence on performance
+// the following test can not achieve a convergence on performance
 // #[bench]
 // fn bench_add_1000_1MB_msgs_timeout (b: &mut Bencher) {
 //   let time_to_live = time::Duration::milliseconds(100);

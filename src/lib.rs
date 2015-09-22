@@ -125,8 +125,7 @@
 extern crate rand;
 extern crate time;
 
-/// Allows message filter container which may be limited by size or time.
-/// Get(value) is not required as only value is stored
+/// Implementation of [message filter](index.html#message-filter).
 pub struct MessageFilter<V>
     where V: PartialOrd + Ord + Clone + ::std::hash::Hash
 {
@@ -135,9 +134,9 @@ pub struct MessageFilter<V>
     capacity: usize,
     time_to_live: ::time::Duration,
 }
-/// Constructor for size (capacity) based MessageFilter
+
 impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + ::std::hash::Hash {
-    /// Constructor for capacity based MessageFilter
+    /// Constructor for capacity based `MessageFilter`.
     pub fn with_capacity(capacity: usize) -> MessageFilter<V> {
         MessageFilter {
             set: ::std::collections::HashSet::new(),
@@ -146,7 +145,8 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + ::std::hash::Hash {
             time_to_live: ::time::Duration::max_value(),
         }
     }
-    /// Constructor for time based MessageFilter
+
+    /// Constructor for time based `MessageFilter`.
     pub fn with_expiry_duration(time_to_live: ::time::Duration) -> MessageFilter<V> {
         MessageFilter {
             set: ::std::collections::HashSet::new(),
@@ -155,7 +155,8 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + ::std::hash::Hash {
             time_to_live: time_to_live,
         }
     }
-    /// Constructor for dual feature capacity or time based MessageFilter
+
+    /// Constructor for dual-feature capacity and time based `MessageFilter`.
     pub fn with_expiry_duration_and_capacity(time_to_live: ::time::Duration,
                                              capacity: usize)
                                              -> MessageFilter<V> {
@@ -166,7 +167,9 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + ::std::hash::Hash {
             time_to_live: time_to_live,
         }
     }
-    /// Add a value to MessageFilter
+
+    /// Removes any expired messages, then adds `message`, then removes enough older messages until
+    /// the message count is at or below `capacity`.
     pub fn add(&mut self, value: V) {
         self.remove_expired();
 
@@ -185,12 +188,14 @@ impl<V> MessageFilter<V> where V: PartialOrd + Ord + Clone + ::std::hash::Hash {
             };
         }
     }
-    /// Check for existence of a key
+
+    /// Removes any expired messages, then returns whether `message` exists in the filter or not.
     pub fn check(&mut self, value: &V) -> bool {
         self.remove_expired();
         self.set.contains(value)
     }
-    /// Current size of cache
+
+    /// Returns the size of the cache, i.e. the number of cached messages.
     pub fn len(&self) -> usize {
         self.set.len()
     }
