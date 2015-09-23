@@ -225,74 +225,91 @@ impl<Message> MessageFilter<Message> where Message: PartialOrd + Ord + Clone + :
 
 #[cfg(test)]
 mod test {
-    fn generate_random_vec<T>(len: usize) -> Vec<T>
-        where T: ::rand::Rand {
-        let mut vec = Vec::<T>::with_capacity(len);
-        for _ in 0..len {
-            vec.push(::rand::random::<T>());
-        }
-        vec
-    }
-
     #[test]
     fn size_only() {
-        let size = 10usize;
+        let size = ::rand::random::<u8>() as usize + 1;
         let mut msg_filter = super::MessageFilter::<usize>::with_capacity(size);
+        assert_eq!(::time::Duration::max_value(), msg_filter.time_to_live);
+        assert_eq!(size, msg_filter.capacity);
 
-        for i in 0..10 {
-            println!("i : {} ", i);
+        // Add `size` messages - all should be added.
+        for i in 0..size {
             assert_eq!(msg_filter.len(), i);
             msg_filter.add(i);
             assert_eq!(msg_filter.len(), i + 1);
         }
 
-        for i in 10..1000 {
+        // Check all added messages remain.
+        assert!((0..size).all(|index| msg_filter.check(&index)));
+
+        // Add further messages - all should be added, each time pushing out the oldest message.
+        for i in size..1000 {
             msg_filter.add(i);
             assert_eq!(msg_filter.len(), size);
-        }
-
-        for _ in (0..1000).rev() {
-            assert!(msg_filter.check(&(1000 - 1)));
+            assert!(msg_filter.check(&i));
+            if size > 1 {
+                assert!(msg_filter.check(&(i - 1)));
+                assert!(msg_filter.check(&(i - size + 1)));
+            }
+            assert!(!msg_filter.check(&(i - size)));
         }
     }
 
     #[test]
     fn time_only() {
-        let time_to_live = ::time::Duration::milliseconds(100);
+        use ::rand::Rng;
+        let time_to_live = ::time::Duration::milliseconds(::rand::thread_rng().gen_range(50, 150));
         let mut msg_filter = super::MessageFilter::<usize>::with_expiry_duration(time_to_live);
+        assert_eq!(time_to_live, msg_filter.time_to_live);
+        assert_eq!(::std::usize::MAX, msg_filter.capacity);
 
+        // Add 10 messages - all should be added.
         for i in 0..10 {
-            assert_eq!(msg_filter.len(), i);
             msg_filter.add(i);
-            assert_eq!(msg_filter.len(), i + 1);
+            assert!(msg_filter.check(&i));
         }
+        assert_eq!(msg_filter.len(), 10);
 
-        ::std::thread::sleep_ms(100);
+        // Allow the added messages time to expire.
+        ::std::thread::sleep_ms(time_to_live.num_milliseconds() as u32 + 10);
+
+        // Add a new message which should cause the expired values to be removed.
         msg_filter.add(11);
-
+        assert!(msg_filter.check(&11));
         assert_eq!(msg_filter.len(), 1);
 
+        // Check we can add the initial messages again.
         for i in 0..10 {
             assert_eq!(msg_filter.len(), i + 1);
             msg_filter.add(i);
+            assert!(msg_filter.check(&i));
             assert_eq!(msg_filter.len(), i + 2);
         }
     }
 
     #[test]
     fn time_and_size() {
-        let size = 10usize;
-        let time_to_live = ::time::Duration::milliseconds(100);
+        use ::rand::Rng;
+        let size = ::rand::random::<u8>() as usize + 1;
+        let time_to_live = ::time::Duration::milliseconds(::rand::thread_rng().gen_range(50, 150));
         let mut msg_filter =
             super::MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);
+        assert_eq!(time_to_live, msg_filter.time_to_live);
+        assert_eq!(size, msg_filter.capacity);
 
         for i in 0..1000 {
+            // Check `size` has not been exceeded.
             if i < size {
                 assert_eq!(msg_filter.len(), i);
+            } else {
+                assert_eq!(msg_filter.len(), size);
             }
 
+            // Add a new message and check that it has been added successfully.
             msg_filter.add(i);
+            assert!(msg_filter.check(&i));
 
+            // Check `size` has not been exceeded.
             if i < size {
                 assert_eq!(msg_filter.len(), i + 1);
             } else {
@@ -300,32 +317,51 @@ mod test {
             }
         }
 
-        ::std::thread::sleep_ms(100);
-        msg_filter.add(1);
+        // Allow the added messages time to expire.
+        ::std::thread::sleep_ms(time_to_live.num_milliseconds() as u32 + 10);
 
-        assert_eq!(msg_filter.len(), 1);
+        // Check for the last message, which should cause all the values to be removed.
+        assert!(!msg_filter.check(&1000));
+        assert_eq!(msg_filter.len(), 0);
     }
 
     #[test]
     fn time_size_struct_value() {
-        let size = 100usize;
-        let time_to_live = ::time::Duration::milliseconds(100);
+        use ::rand::Rng;
 
         #[derive(PartialEq, PartialOrd, Ord, Clone, Eq, Hash)]
         struct Temp {
             id: Vec<u8>,
         }
 
+        impl Temp {
+            fn new() -> Temp {
+                let mut rng = ::rand::thread_rng();
+                Temp { id: ::rand::sample(&mut rng, 0u8..255, 64) }
+            }
+        }
+
+        let size = ::rand::random::<u8>() as usize + 1;
+        let time_to_live = ::time::Duration::milliseconds(::rand::thread_rng().gen_range(50, 150));
         let mut msg_filter =
             super::MessageFilter::<Temp>::with_expiry_duration_and_capacity(time_to_live, size);
+        assert_eq!(time_to_live, msg_filter.time_to_live);
+        assert_eq!(size, msg_filter.capacity);
 
         for i in 0..1000 {
+            // Check `size` has not been exceeded.
             if i < size {
                 assert_eq!(msg_filter.len(), i);
+            } else {
+                assert_eq!(msg_filter.len(), size);
             }
 
-            msg_filter.add(Temp { id: generate_random_vec::<u8>(64), });
+            // Add a new message and check that it has been added successfully.
+            let temp = Temp::new();
+            msg_filter.add(temp.clone());
+            assert!(msg_filter.check(&temp));
 
+            // Check `size` has not been exceeded.
             if i < size {
                 assert_eq!(msg_filter.len(), i + 1);
             } else {
@@ -333,9 +369,13 @@ mod test {
             }
         }
 
-        ::std::thread::sleep_ms(100);
-        msg_filter.add(Temp { id: generate_random_vec::<u8>(64), });
+        // Allow the added messages time to expire.
+        ::std::thread::sleep_ms(time_to_live.num_milliseconds() as u32 + 10);
 
+        // Add a new message which should cause the expired values to be removed.
+        let temp = Temp::new();
+        msg_filter.add(temp.clone());
         assert_eq!(msg_filter.len(), 1);
+        assert!(msg_filter.check(&temp));
     }
 }
