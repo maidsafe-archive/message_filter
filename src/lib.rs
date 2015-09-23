@@ -227,7 +227,7 @@ impl<Message> MessageFilter<Message> where Message: PartialOrd + Ord + Clone + :
 mod test {
     #[test]
     fn size_only() {
-        let size = ::rand::random::<u8>() as usize;
+        let size = ::rand::random::<u8>() as usize + 1;
         let mut msg_filter = super::MessageFilter::<usize>::with_capacity(size);
         assert_eq!(::time::Duration::max_value(), msg_filter.time_to_live);
         assert_eq!(size, msg_filter.capacity);
@@ -247,8 +247,10 @@ mod test {
             msg_filter.add(i);
             assert_eq!(msg_filter.len(), size);
             assert!(msg_filter.check(&i));
-            assert!(msg_filter.check(&(i - 1)));
-            assert!(msg_filter.check(&(i - size + 1)));
+            if size > 1 {
+                assert!(msg_filter.check(&(i - 1)));
+                assert!(msg_filter.check(&(i - size + 1)));
+            }
             assert!(!msg_filter.check(&(i - size)));
         }
     }
@@ -288,7 +290,7 @@ mod test {
     #[test]
     fn time_and_size() {
         use ::rand::Rng;
-        let size = ::rand::random::<u8>() as usize;
+        let size = ::rand::random::<u8>() as usize + 1;
         let time_to_live = ::time::Duration::milliseconds(::rand::thread_rng().gen_range(50, 150));
         let mut msg_filter =
             super::MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);
@@ -339,7 +341,7 @@ mod test {
             }
         }
 
-        let size = ::rand::random::<u8>() as usize;
+        let size = ::rand::random::<u8>() as usize + 1;
         let time_to_live = ::time::Duration::milliseconds(::rand::thread_rng().gen_range(50, 150));
         let mut msg_filter =
             super::MessageFilter::<Temp>::with_expiry_duration_and_capacity(time_to_live, size);
