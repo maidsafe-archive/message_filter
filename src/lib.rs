@@ -240,9 +240,7 @@ mod test {
         }
 
         // Check all added messages remain.
-        for i in 0..size {
-            assert!(msg_filter.check(&i));
-        }
+        assert!((0..size).all(|index| msg_filter.check(&index)));
 
         // Add further messages - all should be added, each time pushing out the oldest message.
         for i in size..1000 {
