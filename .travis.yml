@@ -1,6 +1,6 @@
 env:
   global:
-    - secure: fCU0zX/BW0MlzTcIFtVI8Ipn69ECh7iix0YFZ01H2GTpQujOieyL2lFo92rlryNKxc5ghhvcBfIOLwO42LY+hO81RiMJm1mG+SSSK/S8q4Do+WIXZei2THUx1T8tNw0E5eUGVrncXITnTSqsTA9+2GLeyQKaoPtbaPf9nQkCr8I=
+    - secure: SVCtAWu9Bs+UKyESl+89x9JN4HAuVaMYrEBhyHOzBtCJxIjnQvDdxb2HS/dzGRgoWO6QisqzsE+aJmHRUlxDr/vqUHP41hUAtW41W4cJ5fIGwejxj6jLQxy7+5Tj9NJn3iQaqNCi6KsnkF7JmTQu+Q8FW2hftyzFkQaegy84bsk=
     - ElfUtilsVersion=0.163
 os:
   - linux
