@@ -1,6 +1,6 @@
 [package]
 name = "message_filter"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["MaidSafe Developers <dev@maidsafe.net>"]
 description = "A size or time based message filter that takes any generic type as a key and will drop keys after a time period, or once a maximum number of messages is reached (LRU Cache pattern)."
 documentation = "http://maidsafe.net/message_filter/latest"
@@ -10,7 +10,7 @@ license = "GPL-3.0"
 homepage = "http://maidsafe.net"
 
 [dependencies]
-time = "*"
+time = "~0.1.34"
 
 [dev-dependencies]
-rand = "*"
+rand = "~0.3.12"

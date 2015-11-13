@@ -1,5 +1,8 @@
 # Message Filter - Change Log
 
+## [0.1.5]
+- Remove wildcard dependencies.
+
 ## [0.1.4]
 - [#36](https://github.com/maidsafe/message_filter/pull/36) remove expired values at start of add and check
 - update CI scripts
