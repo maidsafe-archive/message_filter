@@ -215,7 +215,8 @@ mod test {
         assert_eq!(msg_filter.len(), 10);
 
         // Allow the added messages time to expire.
-        ::std::thread::sleep_ms(time_to_live.num_milliseconds() as u32 + 10);
+        let sleep_duration = ::std::time::Duration::from_millis(time_to_live.num_milliseconds() as u64 + 10);
+        ::std::thread::sleep(sleep_duration);
 
         // Add a new message which should cause the expired values to be removed.
         msg_filter.add(11);
@@ -262,7 +263,8 @@ mod test {
         }
 
         // Allow the added messages time to expire.
-        ::std::thread::sleep_ms(time_to_live.num_milliseconds() as u32 + 10);
+        let sleep_duration = ::std::time::Duration::from_millis(time_to_live.num_milliseconds() as u64 + 10);
+        ::std::thread::sleep(sleep_duration);
 
         // Check for the last message, which should cause all the values to be removed.
         assert!(!msg_filter.check(&1000));
@@ -314,7 +316,8 @@ mod test {
         }
 
         // Allow the added messages time to expire.
-        ::std::thread::sleep_ms(time_to_live.num_milliseconds() as u32 + 10);
+        let sleep_duration = ::std::time::Duration::from_millis(time_to_live.num_milliseconds() as u64 + 10);
+        ::std::thread::sleep(sleep_duration);
 
         // Add a new message which should cause the expired values to be removed.
         let temp = Temp::new();
