@@ -19,9 +19,9 @@
           unknown_crate_types, warnings)]
 #![deny(deprecated, drop_with_repr_extern, improper_ctypes, missing_docs,
         non_shorthand_field_patterns, overflowing_literals, plugin_as_library,
-        private_no_mangle_fns, private_no_mangle_statics, raw_pointer_derive, stable_features,
-        unconditional_recursion, unknown_lints, unsafe_code, unused, unused_allocation,
-        unused_attributes, unused_comparisons, unused_features, unused_parens, while_true)]
+        private_no_mangle_fns, private_no_mangle_statics, stable_features, unconditional_recursion,
+        unknown_lints, unsafe_code, unused, unused_allocation, unused_attributes,
+        unused_comparisons, unused_features, unused_parens, while_true)]
 #![warn(trivial_casts, trivial_numeric_casts, unused_extern_crates, unused_import_braces,
         unused_qualifications, unused_results, variant_size_differences)]
 #![allow(box_pointers, fat_ptr_transmutes, missing_copy_implementations,
@@ -78,7 +78,6 @@ fn bench_add_10000_1kb_messages_to_1000_capacity(b: &mut ::test::Bencher) {
     assert_eq!(my_cache.len(), 1000);
 }
 
-
 #[bench]
 fn bench_add_1000_1kb_messages_timeout(b: &mut ::test::Bencher) {
     let time_to_live = time::Duration::milliseconds(100);
@@ -90,7 +89,7 @@ fn bench_add_1000_1kb_messages_timeout(b: &mut ::test::Bencher) {
         my_cache.add(generate_random_vec::<u8>(bytes_len));
     }
     let content = generate_random_vec::<u8>(bytes_len);
-    ::std::thread::sleep_ms(100);
+    ::std::thread::sleep(::std::time::Duration::from_millis(100));
 
     b.iter(|| {
         my_cache.add(content.clone());
@@ -101,20 +100,21 @@ fn bench_add_1000_1kb_messages_timeout(b: &mut ::test::Bencher) {
 
 // the following test can not achieve a convergence on performance
 // #[bench]
-// fn bench_add_1000_1MB_msgs_timeout (b: &mut Bencher) {
-//   let time_to_live = time::Duration::milliseconds(100);
-//   let mut my_cache = MessageFilter::<Vec<u8>>::with_expiry_duration(time_to_live);
+// fn bench_add_1000_1mb_messages_timeout (b: &mut ::test::Bencher) {
+//     let time_to_live = time::Duration::milliseconds(100);
+//     let mut my_cache =
+//         ::message_filter::MessageFilter::<Vec<u8>>::with_expiry_duration(time_to_live);
 
-//   let mut contents = Vec::<Vec<u8>>::new();
-//   let bytes_len = 1024 * 1024;
-//   for _ in 0..1000 {
-//     contents.push(generate_random_vec::<u8>(bytes_len));
-//   }
-
-//   b.iter(|| {
-//     for i in 0..1000 {
-//       my_cache.add(contents[i].clone());
+//     let mut contents = Vec::<Vec<u8>>::new();
+//     let bytes_len = 1024 * 1024;
+//     for _ in 0..1000 {
+//         contents.push(generate_random_vec::<u8>(bytes_len));
 //     }
-//   });
-//   b.bytes = 1000 * bytes_len as u64;
+
+//     b.iter(|| {
+//         for i in 0..1000 {
+//             my_cache.add(contents[i].clone());
+//         }
+//     });
+//     b.bytes = 1000 * bytes_len as u64;
 // }
