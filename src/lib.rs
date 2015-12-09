@@ -393,7 +393,9 @@ mod test {
         let sleep_duration =
             ::std::time::Duration::from_millis((time_to_live.num_milliseconds() as u64 / 2) + 10);
         ::std::thread::sleep(sleep_duration);
-        let _ = time_filter.insert(0);
+        let element = time_filter.insert(0);
+        assert!(element.is_some());
+        assert_eq!(element.unwrap(), 0);
 
         // Wait for another half of the expiry time and check it's not been removed.
         ::std::thread::sleep(sleep_duration);
