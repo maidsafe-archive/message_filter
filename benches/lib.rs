@@ -53,7 +53,8 @@ fn bench_add_1000_1kb_messages_to_100_capacity(b: &mut ::test::Bencher) {
 
     b.iter(|| {
         for i in 0..1000 {
-  	        my_cache.add(contents[i].clone());
+            // Each value is unique so return from insert is None.
+            let _ = my_cache.insert(contents[i].clone());
         }
     });
     b.bytes = 1000 * bytes_len as u64;
@@ -71,7 +72,8 @@ fn bench_add_10000_1kb_messages_to_1000_capacity(b: &mut ::test::Bencher) {
 
     b.iter(|| {
         for i in 0..10000 {
-            my_cache.add(contents[i].clone());
+            // Each value is unique so return from insert is None.
+            let _ = my_cache.insert(contents[i].clone());
         }
     });
     b.bytes = 10000 * bytes_len as u64;
@@ -86,13 +88,15 @@ fn bench_add_1000_1kb_messages_timeout(b: &mut ::test::Bencher) {
 
     let bytes_len = 1024;
     for _ in 0..1000 {
-        my_cache.add(generate_random_vec::<u8>(bytes_len));
+        // Each value is probably unique so return from insert will probably be None.
+        let _ = my_cache.insert(generate_random_vec::<u8>(bytes_len));
     }
     let content = generate_random_vec::<u8>(bytes_len);
     ::std::thread::sleep(::std::time::Duration::from_millis(100));
 
     b.iter(|| {
-        my_cache.add(content.clone());
+        // Each value is probably unique so return from insert will probably be None.
+        let _ = my_cache.insert(content.clone());
     });
     b.bytes = bytes_len as u64;
     assert_eq!(my_cache.len(), 1);
@@ -113,7 +117,7 @@ fn bench_add_1000_1kb_messages_timeout(b: &mut ::test::Bencher) {
 
 //     b.iter(|| {
 //         for i in 0..1000 {
-//             my_cache.add(contents[i].clone());
+//             let _ = my_cache.insert(contents[i].clone());
 //         }
 //     });
 //     b.bytes = 1000 * bytes_len as u64;
