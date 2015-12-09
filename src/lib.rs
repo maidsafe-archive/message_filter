@@ -199,7 +199,8 @@ mod test {
         // Add `size` messages - all should be added.
         for i in 0..size {
             assert_eq!(msg_filter.len(), i);
-            let _ = msg_filter.insert(i);
+            let element = msg_filter.insert(i);
+            assert_eq!(element, None);
             assert_eq!(msg_filter.len(), i + 1);
         }
 
@@ -229,7 +230,8 @@ mod test {
 
         // Add 10 messages - all should be added.
         for i in 0..10 {
-            let _ = msg_filter.insert(i);
+            let element = msg_filter.insert(i);
+            assert_eq!(element, None);
             assert!(msg_filter.contains(&i));
         }
         assert_eq!(msg_filter.len(), 10);
@@ -272,7 +274,8 @@ mod test {
             }
 
             // Add a new message and check that it has been added successfully.
-            let _ = msg_filter.insert(i);
+            let element = msg_filter.insert(i);
+            assert_eq!(element, None);
             assert!(msg_filter.contains(&i));
 
             // Check `size` has not been exceeded.
@@ -358,17 +361,21 @@ mod test {
 
         // Add `size` messages - all should be added.
         for i in 0..size {
-            let _ = capacity_filter.insert(i);
+            let element = capacity_filter.insert(i);
+            assert_eq!(element, None);
         }
 
         // Check all added messages remain.
         assert!((0..size).all(|index| capacity_filter.contains(&index)));
 
         // Add "0" again.
-        let _ = capacity_filter.insert(0);
+        let element = capacity_filter.insert(0);
+        assert!(element.is_some());
+        assert_eq!(element.unwrap(), 0);
 
         // Add "3" and check it's pushed out "0".
-        let _ = capacity_filter.insert(3);
+        let element = capacity_filter.insert(3);
+        assert_eq!(element, None);
         assert!(!capacity_filter.contains(&0));
         assert!(capacity_filter.contains(&1));
         assert!(capacity_filter.contains(&2));
@@ -379,7 +386,8 @@ mod test {
         let mut time_filter = super::MessageFilter::<usize>::with_expiry_duration(time_to_live);
 
         // Add "0".
-        let _ = time_filter.insert(0);
+        let element = time_filter.insert(0);
+        assert_eq!(element, None);
 
         // Wait for half the expiry time and re-add "0".
         let sleep_duration =
