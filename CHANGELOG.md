@@ -1,5 +1,14 @@
 # Message Filter - Change Log
 
+## [0.2.0]
+- Renamed API function `add` to `insert` and made it return the element if it pre-existed
+- Renamed API function `check` to `contains`
+- Refactored internals to avoid duplicating container of messages
+- Created a test for adding a duplicate message
+- Fixed compiler error in benchmark
+- Removed deprecated lint check
+- Fixed warnings in documentation test
+
 ## [0.1.5]
 - Remove wildcard dependencies.
 
