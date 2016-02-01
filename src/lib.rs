@@ -134,6 +134,11 @@ impl<Message> MessageFilter<Message>
         }
     }
 
+    /// Returns the number of times this message has already been inserted.
+    pub fn count(&self, message: &Message) -> usize {
+        self.entries.iter().find(|t| &t.message == message).map(|t| t.count).unwrap_or(0)
+    }
+
     /// Removes any expired messages, then returns whether `message` exists in the filter or not.
     pub fn contains(&mut self, message: &Message) -> bool {
         self.remove_expired();
@@ -393,7 +398,9 @@ mod test {
         assert!((0..size).all(|index| capacity_filter.contains(&index)));
 
         // Add "0" again.
+        assert_eq!(0, capacity_filter.count(&0));
         assert_eq!(1, capacity_filter.insert(0));
+        assert_eq!(1, capacity_filter.count(&0));
 
         // Add "3" and check it's pushed out "1".
         assert_eq!(0, capacity_filter.insert(3));
@@ -401,6 +408,9 @@ mod test {
         assert!(!capacity_filter.contains(&1));
         assert!(capacity_filter.contains(&2));
         assert!(capacity_filter.contains(&3));
+
+        assert_eq!(2, capacity_filter.insert(0));
+        assert_eq!(2, capacity_filter.count(&0));
 
         // Check re-adding a message to a time-based filter alter's its expiry time.
         let time_to_live = ::time::Duration::milliseconds(200);
