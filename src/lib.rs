@@ -70,14 +70,18 @@
 extern crate rand;
 extern crate time;
 
+use time::SteadyTime;
+
 /// Implementation of [message filter](index.html#message-filter).
-pub struct MessageFilter<Message> where Message: Ord + Clone {
+pub struct MessageFilter<Message> {
     entries: Vec<TimestampedMessage<Message>>,
     capacity: Option<usize>,
     time_to_live: Option<::time::Duration>,
 }
 
-impl<Message> MessageFilter<Message> where Message: Ord + Clone {
+impl<Message> MessageFilter<Message>
+    where Message: PartialEq
+{
     /// Constructor for capacity based `MessageFilter`.
     pub fn with_capacity(capacity: usize) -> MessageFilter<Message> {
         MessageFilter {
@@ -141,6 +145,11 @@ impl<Message> MessageFilter<Message> where Message: Ord + Clone {
         self.entries.len()
     }
 
+    /// Returns whether there are no entries in the filter.
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
     fn remove_excess(&mut self) {
         // If capacity is Some, remove the first entry if we're above the limit (should only ever be
         // at most one entry above capacity).
@@ -154,7 +163,7 @@ impl<Message> MessageFilter<Message> where Message: Ord + Clone {
 
     fn remove_expired(&mut self) {
         if self.time_to_live.is_some() {
-            let now = ::time::SteadyTime::now();
+            let now = SteadyTime::now();
             // The entries are sorted from oldest to newest, so just split off the vector at the
             // first unexpired entry and the returned vector is the remaining unexpired values.  If
             // we don't find any unexpired value, just clear the vector.
@@ -169,7 +178,7 @@ impl<Message> MessageFilter<Message> where Message: Ord + Clone {
 
 struct TimestampedMessage<Message> {
     pub message: Message,
-    pub expiry_point: ::time::SteadyTime,
+    pub expiry_point: SteadyTime,
     /// How many copies of this message have been seen before this one.
     pub count: usize,
 }
@@ -177,13 +186,13 @@ struct TimestampedMessage<Message> {
 impl<Message> TimestampedMessage<Message> {
     pub fn new(message: Message,
                time_to_live: Option<::time::Duration>)
-               -> TimestampedMessage<Message>{
+               -> TimestampedMessage<Message> {
         TimestampedMessage {
             message: message,
             expiry_point: match time_to_live {
-                              Some(time_to_live) => ::time::SteadyTime::now() + time_to_live,
-                              None => ::time::SteadyTime::now(),
-                          },
+                Some(time_to_live) => SteadyTime::now() + time_to_live,
+                None => SteadyTime::now(),
+            },
             count: 0,
         }
     }
@@ -191,8 +200,8 @@ impl<Message> TimestampedMessage<Message> {
     /// Updates the expiry point to set the given time to live from now.
     pub fn update_expiry_point(&mut self, time_to_live: Option<::time::Duration>) {
         self.expiry_point = match time_to_live {
-            Some(time_to_live) => ::time::SteadyTime::now() + time_to_live,
-            None => ::time::SteadyTime::now(),
+            Some(time_to_live) => SteadyTime::now() + time_to_live,
+            None => SteadyTime::now(),
         };
     }
 
@@ -207,10 +216,15 @@ impl<Message> TimestampedMessage<Message> {
 
 #[cfg(test)]
 mod test {
+    use super::*;
+    use rand;
+    use rand::Rng;
+    use std::thread;
+
     #[test]
     fn size_only() {
-        let size = ::rand::random::<u8>() as usize + 1;
-        let mut msg_filter = super::MessageFilter::<usize>::with_capacity(size);
+        let size = rand::random::<u8>() as usize + 1;
+        let mut msg_filter = MessageFilter::<usize>::with_capacity(size);
         assert!(msg_filter.time_to_live.is_none());
         assert_eq!(Some(size), msg_filter.capacity);
 
@@ -239,9 +253,8 @@ mod test {
 
     #[test]
     fn time_only() {
-        use ::rand::Rng;
-        let time_to_live = ::time::Duration::milliseconds(::rand::thread_rng().gen_range(50, 150));
-        let mut msg_filter = super::MessageFilter::<usize>::with_expiry_duration(time_to_live);
+        let time_to_live = ::time::Duration::milliseconds(rand::thread_rng().gen_range(50, 150));
+        let mut msg_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);
         assert_eq!(Some(time_to_live), msg_filter.time_to_live);
         assert_eq!(None, msg_filter.capacity);
 
@@ -255,7 +268,7 @@ mod test {
         // Allow the added messages time to expire.
         let sleep_duration =
             ::std::time::Duration::from_millis(time_to_live.num_milliseconds() as u64 + 10);
-        ::std::thread::sleep(sleep_duration);
+        thread::sleep(sleep_duration);
 
         // Add a new message which should cause the expired values to be removed.
         assert_eq!(0, msg_filter.insert(11));
@@ -273,11 +286,10 @@ mod test {
 
     #[test]
     fn time_and_size() {
-        use ::rand::Rng;
-        let size = ::rand::random::<u8>() as usize + 1;
-        let time_to_live = ::time::Duration::milliseconds(::rand::thread_rng().gen_range(50, 150));
+        let size = rand::random::<u8>() as usize + 1;
+        let time_to_live = ::time::Duration::milliseconds(rand::thread_rng().gen_range(50, 150));
         let mut msg_filter =
-            super::MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);
+            MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);
         assert_eq!(Some(time_to_live), msg_filter.time_to_live);
         assert_eq!(Some(size), msg_filter.capacity);
 
@@ -302,9 +314,9 @@ mod test {
         }
 
         // Allow the added messages time to expire.
-        let sleep_duration = ::std::time::Duration::from_millis(
-                                 time_to_live.num_milliseconds() as u64 + 10);
-        ::std::thread::sleep(sleep_duration);
+        let sleep_duration =
+            ::std::time::Duration::from_millis(time_to_live.num_milliseconds() as u64 + 10);
+        thread::sleep(sleep_duration);
 
         // Check for the last message, which should cause all the values to be removed.
         assert!(!msg_filter.contains(&1000));
@@ -313,8 +325,6 @@ mod test {
 
     #[test]
     fn time_size_struct_value() {
-        use ::rand::Rng;
-
         #[derive(PartialEq, PartialOrd, Ord, Clone, Eq, Hash)]
         struct Temp {
             id: Vec<u8>,
@@ -322,15 +332,15 @@ mod test {
 
         impl Temp {
             fn new() -> Temp {
-                let mut rng = ::rand::thread_rng();
-                Temp { id: ::rand::sample(&mut rng, 0u8..255, 64) }
+                let mut rng = rand::thread_rng();
+                Temp { id: rand::sample(&mut rng, 0u8..255, 64) }
             }
         }
 
-        let size = ::rand::random::<u8>() as usize + 1;
-        let time_to_live = ::time::Duration::milliseconds(::rand::thread_rng().gen_range(50, 150));
-        let mut msg_filter =
-            super::MessageFilter::<Temp>::with_expiry_duration_and_capacity(time_to_live, size);
+        let size = rand::random::<u8>() as usize + 1;
+        let time_to_live = ::time::Duration::milliseconds(rand::thread_rng().gen_range(50, 150));
+        let mut msg_filter = MessageFilter::<Temp>::with_expiry_duration_and_capacity(time_to_live,
+                                                                                      size);
         assert_eq!(Some(time_to_live), msg_filter.time_to_live);
         assert_eq!(Some(size), msg_filter.capacity);
 
@@ -358,7 +368,7 @@ mod test {
         // Allow the added messages time to expire.
         let sleep_duration =
             ::std::time::Duration::from_millis(time_to_live.num_milliseconds() as u64 + 10);
-        ::std::thread::sleep(sleep_duration);
+        thread::sleep(sleep_duration);
 
         // Add a new message which should cause the expired values to be removed.
         let temp = Temp::new();
@@ -372,7 +382,7 @@ mod test {
         // Check re-adding a message to a capacity-based filter doesn't alter its position in the
         // FIFO queue.
         let size = 3;
-        let mut capacity_filter = super::MessageFilter::<usize>::with_capacity(size);
+        let mut capacity_filter = MessageFilter::<usize>::with_capacity(size);
 
         // Add `size` messages - all should be added.
         for i in 0..size {
@@ -394,7 +404,7 @@ mod test {
 
         // Check re-adding a message to a time-based filter alter's its expiry time.
         let time_to_live = ::time::Duration::milliseconds(200);
-        let mut time_filter = super::MessageFilter::<usize>::with_expiry_duration(time_to_live);
+        let mut time_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);
 
         // Add "0".
         assert_eq!(0, time_filter.insert(0));
@@ -402,15 +412,15 @@ mod test {
         // Wait for half the expiry time and re-add "0".
         let sleep_duration =
             ::std::time::Duration::from_millis((time_to_live.num_milliseconds() as u64 / 2) + 10);
-        ::std::thread::sleep(sleep_duration);
+        thread::sleep(sleep_duration);
         assert_eq!(1, time_filter.insert(0));
 
         // Wait for another half of the expiry time and check it's not been removed.
-        ::std::thread::sleep(sleep_duration);
+        thread::sleep(sleep_duration);
         assert!(time_filter.contains(&0));
 
         // Wait for another half of the expiry time and check it's been removed.
-        ::std::thread::sleep(sleep_duration);
+        thread::sleep(sleep_duration);
         assert!(!time_filter.contains(&0));
     }
 }
