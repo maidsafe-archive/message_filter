@@ -70,24 +70,34 @@
 extern crate rand;
 extern crate time;
 
+use std::hash::{Hash, Hasher, SipHasher};
+use std::marker::PhantomData;
 use time::SteadyTime;
+
+
+fn hash<T: Hash>(t: &T) -> u64 {
+    let mut s = SipHasher::new();
+    t.hash(&mut s);
+    s.finish()
+}
+
 
 /// Implementation of [message filter](index.html#message-filter).
 pub struct MessageFilter<Message> {
-    entries: Vec<TimestampedMessage<Message>>,
+    entries: Vec<TimestampedMessage>,
     capacity: Option<usize>,
     time_to_live: Option<::time::Duration>,
+    phantom: PhantomData<Message>,
 }
 
-impl<Message> MessageFilter<Message>
-    where Message: PartialEq
-{
+impl<Message: Hash> MessageFilter<Message> {
     /// Constructor for capacity based `MessageFilter`.
     pub fn with_capacity(capacity: usize) -> MessageFilter<Message> {
         MessageFilter {
             entries: vec![],
             capacity: Some(capacity),
             time_to_live: None,
+            phantom: PhantomData,
         }
     }
 
@@ -97,6 +107,7 @@ impl<Message> MessageFilter<Message>
             entries: vec![],
             capacity: None,
             time_to_live: Some(time_to_live),
+            phantom: PhantomData,
         }
     }
 
@@ -108,6 +119,7 @@ impl<Message> MessageFilter<Message>
             entries: vec![],
             capacity: Some(capacity),
             time_to_live: Some(time_to_live),
+            phantom: PhantomData,
         }
     }
 
@@ -119,16 +131,17 @@ impl<Message> MessageFilter<Message>
     /// queue again.
     ///
     /// The return value is the number of times this specific message has already been added.
-    pub fn insert(&mut self, message: Message) -> usize {
+    pub fn insert(&mut self, message: &Message) -> usize {
         self.remove_expired();
-        if let Some(index) = self.entries.iter().position(|ref t| t.message == message) {
+        let hash_code = hash(message);
+        if let Some(index) = self.entries.iter().position(|ref t| t.hash_code == hash_code) {
             let mut timestamped_message = self.entries.remove(index);
             timestamped_message.update_expiry_point(self.time_to_live);
             let count = timestamped_message.increment_count();
             self.entries.push(timestamped_message);
             count
         } else {
-            self.entries.push(TimestampedMessage::new(message, self.time_to_live));
+            self.entries.push(TimestampedMessage::new(hash_code, self.time_to_live));
             self.remove_excess();
             0
         }
@@ -136,13 +149,15 @@ impl<Message> MessageFilter<Message>
 
     /// Returns the number of times this message has already been inserted.
     pub fn count(&self, message: &Message) -> usize {
-        self.entries.iter().find(|t| &t.message == message).map(|t| t.count).unwrap_or(0)
+        let hash_code = hash(message);
+        self.entries.iter().find(|t| t.hash_code == hash_code).map(|t| t.count).unwrap_or(0)
     }
 
     /// Removes any expired messages, then returns whether `message` exists in the filter or not.
     pub fn contains(&mut self, message: &Message) -> bool {
         self.remove_expired();
-        self.entries.iter().any(|ref entry| entry.message == *message)
+        let hash_code = hash(message);
+        self.entries.iter().any(|ref entry| entry.hash_code == hash_code)
     }
 
     /// Returns the size of the filter, i.e. the number of added messages.
@@ -181,19 +196,17 @@ impl<Message> MessageFilter<Message>
     }
 }
 
-struct TimestampedMessage<Message> {
-    pub message: Message,
+struct TimestampedMessage {
+    pub hash_code: u64,
     pub expiry_point: SteadyTime,
     /// How many copies of this message have been seen before this one.
     pub count: usize,
 }
 
-impl<Message> TimestampedMessage<Message> {
-    pub fn new(message: Message,
-               time_to_live: Option<::time::Duration>)
-               -> TimestampedMessage<Message> {
+impl TimestampedMessage {
+    pub fn new(hash_code: u64, time_to_live: Option<::time::Duration>) -> TimestampedMessage {
         TimestampedMessage {
-            message: message,
+            hash_code: hash_code,
             expiry_point: match time_to_live {
                 Some(time_to_live) => SteadyTime::now() + time_to_live,
                 None => SteadyTime::now(),
@@ -236,7 +249,7 @@ mod test {
         // Add `size` messages - all should be added.
         for i in 0..size {
             assert_eq!(msg_filter.len(), i);
-            assert_eq!(0, msg_filter.insert(i));
+            assert_eq!(0, msg_filter.insert(&i));
             assert_eq!(msg_filter.len(), i + 1);
         }
 
@@ -245,7 +258,7 @@ mod test {
 
         // Add further messages - all should be added, each time pushing out the oldest message.
         for i in size..1000 {
-            assert_eq!(0, msg_filter.insert(i));
+            assert_eq!(0, msg_filter.insert(&i));
             assert_eq!(msg_filter.len(), size);
             assert!(msg_filter.contains(&i));
             if size > 1 {
@@ -265,7 +278,7 @@ mod test {
 
         // Add 10 messages - all should be added.
         for i in 0..10 {
-            assert_eq!(0, msg_filter.insert(i));
+            assert_eq!(0, msg_filter.insert(&i));
             assert!(msg_filter.contains(&i));
         }
         assert_eq!(msg_filter.len(), 10);
@@ -276,14 +289,14 @@ mod test {
         thread::sleep(sleep_duration);
 
         // Add a new message which should cause the expired values to be removed.
-        assert_eq!(0, msg_filter.insert(11));
+        assert_eq!(0, msg_filter.insert(&11));
         assert!(msg_filter.contains(&11));
         assert_eq!(msg_filter.len(), 1);
 
         // Check we can add the initial messages again.
         for i in 0..10 {
             assert_eq!(msg_filter.len(), i + 1);
-            assert_eq!(0, msg_filter.insert(i));
+            assert_eq!(0, msg_filter.insert(&i));
             assert!(msg_filter.contains(&i));
             assert_eq!(msg_filter.len(), i + 2);
         }
@@ -307,7 +320,7 @@ mod test {
             }
 
             // Add a new message and check that it has been added successfully.
-            assert_eq!(0, msg_filter.insert(i));
+            assert_eq!(0, msg_filter.insert(&i));
             assert!(msg_filter.contains(&i));
 
             // Check `size` has not been exceeded.
@@ -359,7 +372,7 @@ mod test {
 
             // Add a new message and check that it has been added successfully.
             let temp = Temp::new();
-            assert_eq!(0, msg_filter.insert(temp.clone()));
+            assert_eq!(0, msg_filter.insert(&temp));
             assert!(msg_filter.contains(&temp));
 
             // Check `size` has not been exceeded.
@@ -377,7 +390,7 @@ mod test {
 
         // Add a new message which should cause the expired values to be removed.
         let temp = Temp::new();
-        assert_eq!(0, msg_filter.insert(temp.clone()));
+        assert_eq!(0, msg_filter.insert(&temp));
         assert_eq!(msg_filter.len(), 1);
         assert!(msg_filter.contains(&temp));
     }
@@ -391,7 +404,7 @@ mod test {
 
         // Add `size` messages - all should be added.
         for i in 0..size {
-            assert_eq!(0, capacity_filter.insert(i));
+            assert_eq!(0, capacity_filter.insert(&i));
         }
 
         // Check all added messages remain.
@@ -399,17 +412,17 @@ mod test {
 
         // Add "0" again.
         assert_eq!(0, capacity_filter.count(&0));
-        assert_eq!(1, capacity_filter.insert(0));
+        assert_eq!(1, capacity_filter.insert(&0));
         assert_eq!(1, capacity_filter.count(&0));
 
         // Add "3" and check it's pushed out "1".
-        assert_eq!(0, capacity_filter.insert(3));
+        assert_eq!(0, capacity_filter.insert(&3));
         assert!(capacity_filter.contains(&0));
         assert!(!capacity_filter.contains(&1));
         assert!(capacity_filter.contains(&2));
         assert!(capacity_filter.contains(&3));
 
-        assert_eq!(2, capacity_filter.insert(0));
+        assert_eq!(2, capacity_filter.insert(&0));
         assert_eq!(2, capacity_filter.count(&0));
 
         // Check re-adding a message to a time-based filter alter's its expiry time.
@@ -417,13 +430,13 @@ mod test {
         let mut time_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);
 
         // Add "0".
-        assert_eq!(0, time_filter.insert(0));
+        assert_eq!(0, time_filter.insert(&0));
 
         // Wait for half the expiry time and re-add "0".
         let sleep_duration =
             ::std::time::Duration::from_millis((time_to_live.num_milliseconds() as u64 / 2) + 10);
         thread::sleep(sleep_duration);
-        assert_eq!(1, time_filter.insert(0));
+        assert_eq!(1, time_filter.insert(&0));
 
         // Wait for another half of the expiry time and check it's not been removed.
         thread::sleep(sleep_duration);
