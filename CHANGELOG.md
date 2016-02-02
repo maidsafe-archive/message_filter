@@ -1,5 +1,9 @@
 # Message Filter - Change Log
 
+## [0.3.0]
+- Only store hash codes instead of complete messages.
+- Count the number of times a message has been inserted.
+
 ## [0.2.0]
 - Renamed API function `add` to `insert` and made it return the element if it pre-existed
 - Renamed API function `check` to `contains`
