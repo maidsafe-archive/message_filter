@@ -1,13 +1,13 @@
 [package]
-name = "message_filter"
-version = "0.3.0"
 authors = ["MaidSafe Developers <dev@maidsafe.net>"]
 description = "A size or time based message filter that takes any generic type as a key and will drop keys after a time period, or once a maximum number of messages is reached (LRU Cache pattern)."
 documentation = "http://maidsafe.net/message_filter/latest"
-repository = "https://github.com/maidsafe/message_filter"
-readme = "README.md"
-license = "GPL-3.0"
 homepage = "http://maidsafe.net"
+license = "GPL-3.0"
+name = "message_filter"
+readme = "README.md"
+repository = "https://github.com/maidsafe/message_filter"
+version = "0.3.1"
 
 [dependencies]
 clippy = {version = "~0.0.44", optional = true}
