@@ -1,5 +1,9 @@
 # Message Filter - Change Log
 
+## [0.3.1]
+- Updated dependencies.
+- Added Clippy.
+
 ## [0.3.0]
 - Only store hash codes instead of complete messages.
 - Count the number of times a message has been inserted.
