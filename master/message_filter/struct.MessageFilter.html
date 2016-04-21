@@ -26,7 +26,7 @@
     
 
     <nav class="sidebar">
-        <a href='../message_filter/index.html'><img src='https://raw.githubusercontent.com/maidsafe/QA/master/Images/maidsafe_logo.png' alt='' width='100'></a>
+        <a href='../message_filter/index.html'><img src='https://raw.githubusercontent.com/maidsafe/QA/master/Images/maidsafe_logo.png' alt='logo' width='100'></a>
         <p class='location'><a href='index.html'>message_filter</a></p><script>window.sidebarCurrent = {name: 'MessageFilter', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
     </nav>
 
@@ -46,7 +46,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-12' class='srclink' href='../src/message_filter/lib.rs.html#91-96' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-12' class='srclink' href='../src/message_filter/src/lib.rs.html#91-96' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct MessageFilter&lt;Message&gt; {
     // some fields omitted
 }</pre><div class='docblock'><p>Implementation of <a href="index.html#message-filter">message filter</a>.</p>
@@ -65,6 +65,10 @@ is not already expired, its expiry time is updated and it is moved to the back o
 queue again.</p>
 
 <p>The return value is the number of times this specific message has already been added.</p>
+</div><h4 id='method.remove' class='method'><code>fn <a href='#method.remove' class='fnname'>remove</a>(&amp;mut self, message: &amp;Message)</code></h4>
+<div class='docblock'><p>Removes a message from the filter.</p>
+
+<p>Removes any expired messages, then removes the specified message from the filter.</p>
 </div><h4 id='method.count' class='method'><code>fn <a href='#method.count' class='fnname'>count</a>(&amp;self, message: &amp;Message) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
 <div class='docblock'><p>Returns the number of times this message has already been inserted.</p>
 </div><h4 id='method.contains' class='method'><code>fn <a href='#method.contains' class='fnname'>contains</a>(&amp;mut self, message: &amp;Message) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
@@ -116,7 +120,7 @@ queue again.</p>
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>
