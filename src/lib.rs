@@ -152,6 +152,17 @@ impl<Message: Hash> MessageFilter<Message> {
         }
     }
 
+    /// Removes a message from the filter.
+    ///
+    /// Removes any expired messages, then removes the specified message from the filter.
+    pub fn remove(&mut self, message: &Message) {
+        self.remove_expired();
+        let hash_code = hash(message);
+        if let Some(index) = self.entries.iter().position(|ref t| t.hash_code == hash_code) {
+            let _ = self.entries.remove(index);
+        }
+    }
+
     /// Returns the number of times this message has already been inserted.
     pub fn count(&self, message: &Message) -> usize {
         let hash_code = hash(message);
