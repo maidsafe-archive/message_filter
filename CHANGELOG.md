@@ -1,5 +1,10 @@
 # Message Filter - Change Log
 
+## [0.4.0]
+- Add API function `remove`.
+- Updated dependencies.
+- Update Contributor Agreement to version 1.1.
+
 ## [0.3.1]
 - Updated dependencies.
 - Added Clippy.

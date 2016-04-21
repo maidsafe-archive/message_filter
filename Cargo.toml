@@ -7,11 +7,11 @@ license = "GPL-3.0"
 name = "message_filter"
 readme = "README.md"
 repository = "https://github.com/maidsafe/message_filter"
-version = "0.3.1"
+version = "0.4.0"
 
 [dependencies]
-clippy = {version = "~0.0.45", optional = true}
-time = "~0.1.34"
+clippy = {version = "~0.0.63", optional = true}
+time = "~0.1.35"
 
 [dev-dependencies]
 rand = "~0.3.14"
