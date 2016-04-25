@@ -29,7 +29,6 @@
 //! ```
 //! # #![allow(unused_variables)]
 //! # extern crate message_filter;
-//! # extern crate time;
 //! # fn main() {
 //! use ::message_filter::MessageFilter;
 //!
@@ -38,7 +37,7 @@
 //! let message_filter = MessageFilter::<u8>::with_capacity(max_count);
 //!
 //! // Construct a `MessageFilter` of `String`s, limited by expiry time
-//! let time_to_live = ::time::Duration::milliseconds(100);
+//! let time_to_live = ::std::time::Duration::from_millis(100);
 //! let message_filter = MessageFilter::<String>::with_expiry_duration(time_to_live);
 //!
 //! // Construct a `MessageFilter` of `Vec<u8>`s, limited by message count and expiry time
@@ -73,11 +72,10 @@
 
 #[cfg(test)]
 extern crate rand;
-extern crate time;
 
 use std::hash::{Hash, Hasher, SipHasher};
 use std::marker::PhantomData;
-use time::SteadyTime;
+use std::time::{Duration, SystemTime};
 
 
 fn hash<T: Hash>(t: &T) -> u64 {
@@ -91,7 +89,7 @@ fn hash<T: Hash>(t: &T) -> u64 {
 pub struct MessageFilter<Message> {
     entries: Vec<TimestampedMessage>,
     capacity: Option<usize>,
-    time_to_live: Option<::time::Duration>,
+    time_to_live: Option<Duration>,
     phantom: PhantomData<Message>,
 }
 
@@ -107,7 +105,7 @@ impl<Message: Hash> MessageFilter<Message> {
     }
 
     /// Constructor for time based `MessageFilter`.
-    pub fn with_expiry_duration(time_to_live: ::time::Duration) -> MessageFilter<Message> {
+    pub fn with_expiry_duration(time_to_live: Duration) -> MessageFilter<Message> {
         MessageFilter {
             entries: vec![],
             capacity: None,
@@ -117,7 +115,7 @@ impl<Message: Hash> MessageFilter<Message> {
     }
 
     /// Constructor for dual-feature capacity and time based `MessageFilter`.
-    pub fn with_expiry_duration_and_capacity(time_to_live: ::time::Duration,
+    pub fn with_expiry_duration_and_capacity(time_to_live: Duration,
                                              capacity: usize)
                                              -> MessageFilter<Message> {
         MessageFilter {
@@ -199,7 +197,7 @@ impl<Message: Hash> MessageFilter<Message> {
 
     fn remove_expired(&mut self) {
         if self.time_to_live.is_some() {
-            let now = SteadyTime::now();
+            let now = SystemTime::now();
             // The entries are sorted from oldest to newest, so just split off the vector at the
             // first unexpired entry and the returned vector is the remaining unexpired values.  If
             // we don't find any unexpired value, just clear the vector.
@@ -214,28 +212,28 @@ impl<Message: Hash> MessageFilter<Message> {
 
 struct TimestampedMessage {
     pub hash_code: u64,
-    pub expiry_point: SteadyTime,
+    pub expiry_point: SystemTime,
     /// How many copies of this message have been seen before this one.
     pub count: usize,
 }
 
 impl TimestampedMessage {
-    pub fn new(hash_code: u64, time_to_live: Option<::time::Duration>) -> TimestampedMessage {
+    pub fn new(hash_code: u64, time_to_live: Option<Duration>) -> TimestampedMessage {
         TimestampedMessage {
             hash_code: hash_code,
             expiry_point: match time_to_live {
-                Some(time_to_live) => SteadyTime::now() + time_to_live,
-                None => SteadyTime::now(),
+                Some(time_to_live) => SystemTime::now() + time_to_live,
+                None => SystemTime::now(),
             },
             count: 0,
         }
     }
 
     /// Updates the expiry point to set the given time to live from now.
-    pub fn update_expiry_point(&mut self, time_to_live: Option<::time::Duration>) {
+    pub fn update_expiry_point(&mut self, time_to_live: Option<Duration>) {
         self.expiry_point = match time_to_live {
-            Some(time_to_live) => SteadyTime::now() + time_to_live,
-            None => SteadyTime::now(),
+            Some(time_to_live) => SystemTime::now() + time_to_live,
+            None => SystemTime::now(),
         };
     }
 
@@ -254,6 +252,7 @@ mod test {
     use rand;
     use rand::Rng;
     use std::thread;
+    use std::time::Duration;
 
     #[test]
     fn size_only() {
@@ -287,7 +286,7 @@ mod test {
 
     #[test]
     fn time_only() {
-        let time_to_live = ::time::Duration::milliseconds(rand::thread_rng().gen_range(50, 150));
+        let time_to_live = Duration::from_millis(rand::thread_rng().gen_range(50, 150));
         let mut msg_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);
         assert_eq!(Some(time_to_live), msg_filter.time_to_live);
         assert_eq!(None, msg_filter.capacity);
@@ -301,7 +300,7 @@ mod test {
 
         // Allow the added messages time to expire.
         let sleep_duration =
-            ::std::time::Duration::from_millis(time_to_live.num_milliseconds() as u64 + 10);
+            Duration::from_millis(time_to_live.subsec_nanos() as u64 / 1000000 + 10);
         thread::sleep(sleep_duration);
 
         // Add a new message which should cause the expired values to be removed.
@@ -321,7 +320,7 @@ mod test {
     #[test]
     fn time_and_size() {
         let size = rand::random::<u8>() as usize + 1;
-        let time_to_live = ::time::Duration::milliseconds(rand::thread_rng().gen_range(50, 150));
+        let time_to_live = Duration::from_millis(rand::thread_rng().gen_range(50, 150));
         let mut msg_filter =
             MessageFilter::<usize>::with_expiry_duration_and_capacity(time_to_live, size);
         assert_eq!(Some(time_to_live), msg_filter.time_to_live);
@@ -349,7 +348,7 @@ mod test {
 
         // Allow the added messages time to expire.
         let sleep_duration =
-            ::std::time::Duration::from_millis(time_to_live.num_milliseconds() as u64 + 10);
+            Duration::from_millis(time_to_live.subsec_nanos() as u64 / 1000000 + 10);
         thread::sleep(sleep_duration);
 
         // Check for the last message, which should cause all the values to be removed.
@@ -372,7 +371,7 @@ mod test {
         }
 
         let size = rand::random::<u8>() as usize + 1;
-        let time_to_live = ::time::Duration::milliseconds(rand::thread_rng().gen_range(50, 150));
+        let time_to_live = Duration::from_millis(rand::thread_rng().gen_range(50, 150));
         let mut msg_filter = MessageFilter::<Temp>::with_expiry_duration_and_capacity(time_to_live,
                                                                                       size);
         assert_eq!(Some(time_to_live), msg_filter.time_to_live);
@@ -401,7 +400,7 @@ mod test {
 
         // Allow the added messages time to expire.
         let sleep_duration =
-            ::std::time::Duration::from_millis(time_to_live.num_milliseconds() as u64 + 10);
+            Duration::from_millis(time_to_live.subsec_nanos() as u64 / 1000000 + 10);
         thread::sleep(sleep_duration);
 
         // Add a new message which should cause the expired values to be removed.
@@ -442,7 +441,7 @@ mod test {
         assert_eq!(2, capacity_filter.count(&0));
 
         // Check re-adding a message to a time-based filter alter's its expiry time.
-        let time_to_live = ::time::Duration::milliseconds(200);
+        let time_to_live = Duration::from_millis(200);
         let mut time_filter = MessageFilter::<usize>::with_expiry_duration(time_to_live);
 
         // Add "0".
@@ -450,7 +449,7 @@ mod test {
 
         // Wait for half the expiry time and re-add "0".
         let sleep_duration =
-            ::std::time::Duration::from_millis((time_to_live.num_milliseconds() as u64 / 2) + 10);
+            Duration::from_millis(time_to_live.subsec_nanos() as u64 / 1000000 / 2 + 10);
         thread::sleep(sleep_duration);
         assert_eq!(1, time_filter.insert(&0));
 
