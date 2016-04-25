@@ -35,10 +35,11 @@
 #![cfg_attr(feature="clippy", allow(use_debug))]
 #![feature(test)]
 
-extern crate time;
 extern crate test;
 extern crate rand;
 extern crate message_filter;
+
+use std::time::Duration;
 
 fn generate_random_vec<T>(len: usize) -> Vec<T>
     where T: rand::Rand {
@@ -61,7 +62,7 @@ fn bench_add_1000_1kb_messages_to_100_capacity(b: &mut ::test::Bencher) {
     b.iter(|| {
         for i in 0..1000 {
             // Each value is unique so return from insert is None.
-            let _ = my_cache.insert(contents[i].clone());
+            let _ = my_cache.insert(&contents[i]);
         }
     });
     b.bytes = 1000 * bytes_len as u64;
@@ -80,7 +81,7 @@ fn bench_add_10000_1kb_messages_to_1000_capacity(b: &mut ::test::Bencher) {
     b.iter(|| {
         for i in 0..10000 {
             // Each value is unique so return from insert is None.
-            let _ = my_cache.insert(contents[i].clone());
+            let _ = my_cache.insert(&contents[i]);
         }
     });
     b.bytes = 10000 * bytes_len as u64;
@@ -89,21 +90,21 @@ fn bench_add_10000_1kb_messages_to_1000_capacity(b: &mut ::test::Bencher) {
 
 #[bench]
 fn bench_add_1000_1kb_messages_timeout(b: &mut ::test::Bencher) {
-    let time_to_live = time::Duration::milliseconds(100);
+    let time_to_live = Duration::from_millis(100);
     let mut my_cache =
         ::message_filter::MessageFilter::<Vec<u8>>::with_expiry_duration(time_to_live);
 
     let bytes_len = 1024;
     for _ in 0..1000 {
         // Each value is probably unique so return from insert will probably be None.
-        let _ = my_cache.insert(generate_random_vec::<u8>(bytes_len));
+        let _ = my_cache.insert(&generate_random_vec::<u8>(bytes_len));
     }
     let content = generate_random_vec::<u8>(bytes_len);
-    ::std::thread::sleep(::std::time::Duration::from_millis(100));
+    ::std::thread::sleep(Duration::from_millis(100));
 
     b.iter(|| {
         // Each value is probably unique so return from insert will probably be None.
-        let _ = my_cache.insert(content.clone());
+        let _ = my_cache.insert(&content);
     });
     b.bytes = bytes_len as u64;
     assert_eq!(my_cache.len(), 1);
