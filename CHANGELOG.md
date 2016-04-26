@@ -1,5 +1,8 @@
 # Message Filter - Change Log
 
+## [0.5.0]
+- Use std::time instead of the time crate
+
 ## [0.4.0]
 - Add API function `remove`.
 - Updated dependencies.
