@@ -505,6 +505,9 @@
 <span id="462">462</span>
 <span id="463">463</span>
 <span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2015 MaidSafe.net limited.</span>
 <span class='comment'>//</span>
@@ -526,9 +529,7 @@
 <span class='doccomment'>//! # Message Filter</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! A size or time based message filter that takes any generic type as a key and will drop keys</span>
-<span class='doccomment'>//! after a time period, or once a maximum number of messages is reached (LRU Cache pattern).  The</span>
-<span class='doccomment'>//! filter currently only allows adding messages; a delete function will be provided at a later</span>
-<span class='doccomment'>//! stage.</span>
+<span class='doccomment'>//! after a time period, or once a maximum number of messages is reached (LRU Cache pattern).</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! This library can be used by network based systems to filter previously seen messages.</span>
 <span class='doccomment'>//!</span>
@@ -672,7 +673,7 @@
     <span class='doccomment'>/// Returns the number of times this message has already been inserted.</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>count</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>message</span>: <span class='kw-2'>&amp;</span><span class='ident'>Message</span>) <span class='op'>-&gt;</span> <span class='ident'>usize</span> {
         <span class='kw'>let</span> <span class='ident'>hash_code</span> <span class='op'>=</span> <span class='ident'>hash</span>(<span class='ident'>message</span>);
-        <span class='self'>self</span>.<span class='ident'>entries</span>.<span class='ident'>iter</span>().<span class='ident'>find</span>(<span class='op'>|</span><span class='ident'>t</span><span class='op'>|</span> <span class='ident'>t</span>.<span class='ident'>hash_code</span> <span class='op'>==</span> <span class='ident'>hash_code</span>).<span class='ident'>map</span>(<span class='op'>|</span><span class='ident'>t</span><span class='op'>|</span> <span class='ident'>t</span>.<span class='ident'>count</span>).<span class='ident'>unwrap_or</span>(<span class='number'>0</span>)
+        <span class='self'>self</span>.<span class='ident'>entries</span>.<span class='ident'>iter</span>().<span class='ident'>find</span>(<span class='op'>|</span><span class='ident'>t</span><span class='op'>|</span> <span class='ident'>t</span>.<span class='ident'>hash_code</span> <span class='op'>==</span> <span class='ident'>hash_code</span>).<span class='ident'>map_or</span>(<span class='number'>0</span>, <span class='op'>|</span><span class='ident'>t</span><span class='op'>|</span> <span class='ident'>t</span>.<span class='ident'>count</span>)
     }
 
     <span class='doccomment'>/// Removes any expired messages, then returns whether `message` exists in the filter or not.</span>
@@ -685,6 +686,11 @@
     <span class='doccomment'>/// Returns the size of the filter, i.e. the number of added messages.</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>len</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>usize</span> {
         <span class='self'>self</span>.<span class='ident'>entries</span>.<span class='ident'>len</span>()
+    }
+
+    <span class='doccomment'>/// Clears the filter, removing all entries.</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>clear</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) {
+        <span class='self'>self</span>.<span class='ident'>entries</span>.<span class='ident'>clear</span>();
     }
 
     <span class='doccomment'>/// Returns whether there are no entries in the filter.</span>
@@ -871,8 +877,8 @@
             <span class='ident'>id</span>: <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;</span>,
         }
 
-        <span class='kw'>impl</span> <span class='ident'>Temp</span> {
-            <span class='kw'>fn</span> <span class='ident'>new</span>() <span class='op'>-&gt;</span> <span class='ident'>Temp</span> {
+        <span class='kw'>impl</span> <span class='ident'>Default</span> <span class='kw'>for</span> <span class='ident'>Temp</span> {
+            <span class='kw'>fn</span> <span class='ident'>default</span>() <span class='op'>-&gt;</span> <span class='ident'>Temp</span> {
                 <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>rng</span> <span class='op'>=</span> <span class='ident'>rand</span>::<span class='ident'>thread_rng</span>();
                 <span class='ident'>Temp</span> { <span class='ident'>id</span>: <span class='ident'>rand</span>::<span class='ident'>sample</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>rng</span>, <span class='number'>0u8</span>..<span class='number'>255</span>, <span class='number'>64</span>) }
             }
@@ -894,7 +900,7 @@
             }
 
             <span class='comment'>// Add a new message and check that it has been added successfully.</span>
-            <span class='kw'>let</span> <span class='ident'>temp</span> <span class='op'>=</span> <span class='ident'>Temp</span>::<span class='ident'>new</span>();
+            <span class='kw'>let</span> <span class='ident'>temp</span>: <span class='ident'>Temp</span> <span class='op'>=</span> <span class='ident'>Default</span>::<span class='ident'>default</span>();
             <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='number'>0</span>, <span class='ident'>msg_filter</span>.<span class='ident'>insert</span>(<span class='kw-2'>&amp;</span><span class='ident'>temp</span>));
             <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>msg_filter</span>.<span class='ident'>contains</span>(<span class='kw-2'>&amp;</span><span class='ident'>temp</span>));
 
@@ -912,7 +918,7 @@
         <span class='ident'>thread</span>::<span class='ident'>sleep</span>(<span class='ident'>sleep_duration</span>);
 
         <span class='comment'>// Add a new message which should cause the expired values to be removed.</span>
-        <span class='kw'>let</span> <span class='ident'>temp</span> <span class='op'>=</span> <span class='ident'>Temp</span>::<span class='ident'>new</span>();
+        <span class='kw'>let</span> <span class='ident'>temp</span>: <span class='ident'>Temp</span> <span class='op'>=</span> <span class='ident'>Default</span>::<span class='ident'>default</span>();
         <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='number'>0</span>, <span class='ident'>msg_filter</span>.<span class='ident'>insert</span>(<span class='kw-2'>&amp;</span><span class='ident'>temp</span>));
         <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>msg_filter</span>.<span class='ident'>len</span>(), <span class='number'>1</span>);
         <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>msg_filter</span>.<span class='ident'>contains</span>(<span class='kw-2'>&amp;</span><span class='ident'>temp</span>));
