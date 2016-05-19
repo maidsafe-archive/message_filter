@@ -10,7 +10,7 @@ repository = "https://github.com/maidsafe/message_filter"
 version = "0.5.0"
 
 [dependencies]
-clippy = {version = "~0.0.63", optional = true}
+clippy = {version = "~0.0.68", optional = true}
 
 [dev-dependencies]
 rand = "~0.3.14"

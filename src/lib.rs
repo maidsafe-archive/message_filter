@@ -18,9 +18,7 @@
 //! # Message Filter
 //!
 //! A size or time based message filter that takes any generic type as a key and will drop keys
-//! after a time period, or once a maximum number of messages is reached (LRU Cache pattern).  The
-//! filter currently only allows adding messages; a delete function will be provided at a later
-//! stage.
+//! after a time period, or once a maximum number of messages is reached (LRU Cache pattern).
 //!
 //! This library can be used by network based systems to filter previously seen messages.
 //!
@@ -164,7 +162,7 @@ impl<Message: Hash> MessageFilter<Message> {
     /// Returns the number of times this message has already been inserted.
     pub fn count(&self, message: &Message) -> usize {
         let hash_code = hash(message);
-        self.entries.iter().find(|t| t.hash_code == hash_code).map(|t| t.count).unwrap_or(0)
+        self.entries.iter().find(|t| t.hash_code == hash_code).map_or(0, |t| t.count)
     }
 
     /// Removes any expired messages, then returns whether `message` exists in the filter or not.
@@ -177,6 +175,11 @@ impl<Message: Hash> MessageFilter<Message> {
     /// Returns the size of the filter, i.e. the number of added messages.
     pub fn len(&self) -> usize {
         self.entries.len()
+    }
+
+    /// Clears the filter, removing all entries.
+    pub fn clear(&mut self) {
+        self.entries.clear();
     }
 
     /// Returns whether there are no entries in the filter.
@@ -363,8 +366,8 @@ mod test {
             id: Vec<u8>,
         }
 
-        impl Temp {
-            fn new() -> Temp {
+        impl Default for Temp {
+            fn default() -> Temp {
                 let mut rng = rand::thread_rng();
                 Temp { id: rand::sample(&mut rng, 0u8..255, 64) }
             }
@@ -386,7 +389,7 @@ mod test {
             }
 
             // Add a new message and check that it has been added successfully.
-            let temp = Temp::new();
+            let temp: Temp = Default::default();
             assert_eq!(0, msg_filter.insert(&temp));
             assert!(msg_filter.contains(&temp));
 
@@ -404,7 +407,7 @@ mod test {
         thread::sleep(sleep_duration);
 
         // Add a new message which should cause the expired values to be removed.
-        let temp = Temp::new();
+        let temp: Temp = Default::default();
         assert_eq!(0, msg_filter.insert(&temp));
         assert_eq!(msg_filter.len(), 1);
         assert!(msg_filter.contains(&temp));
