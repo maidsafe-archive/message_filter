@@ -1,5 +1,8 @@
 # Message Filter - Change Log
 
+## [0.6.0]
+- Add a `clear` method.
+
 ## [0.5.0]
 - Use std::time instead of the time crate
 
