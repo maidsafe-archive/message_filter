@@ -228,7 +228,7 @@ impl TimestampedMessage {
                 Some(time_to_live) => SystemTime::now() + time_to_live,
                 None => SystemTime::now(),
             },
-            count: 0,
+            count: 1,
         }
     }
 
@@ -240,10 +240,10 @@ impl TimestampedMessage {
         };
     }
 
-    /// Increments the counter and returns its new value.
+    /// Increments the counter and returns its old value.
     pub fn increment_count(&mut self) -> usize {
         self.count += 1;
-        self.count
+        self.count - 1
     }
 }
 
@@ -429,9 +429,9 @@ mod test {
         assert!((0..size).all(|index| capacity_filter.contains(&index)));
 
         // Add "0" again.
-        assert_eq!(0, capacity_filter.count(&0));
-        assert_eq!(1, capacity_filter.insert(&0));
         assert_eq!(1, capacity_filter.count(&0));
+        assert_eq!(1, capacity_filter.insert(&0));
+        assert_eq!(2, capacity_filter.count(&0));
 
         // Add "3" and check it's pushed out "1".
         assert_eq!(0, capacity_filter.insert(&3));
@@ -441,7 +441,7 @@ mod test {
         assert!(capacity_filter.contains(&3));
 
         assert_eq!(2, capacity_filter.insert(&0));
-        assert_eq!(2, capacity_filter.count(&0));
+        assert_eq!(3, capacity_filter.count(&0));
 
         // Check re-adding a message to a time-based filter alter's its expiry time.
         let time_to_live = Duration::from_millis(200);
